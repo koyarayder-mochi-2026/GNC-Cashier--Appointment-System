@@ -167,3 +167,16 @@ These endpoints become live only after `supabase_setup.sql` is run in the target
 ### RPC ambiguity fix (2026-11-14)
 
 The ticket creation RPC returns `result_cashier_window_id` and `result_queue_date` rather than output names that duplicate table columns. This avoids PL/pgSQL output-variable collisions in the atomic queue-counter upsert. The public queue summary RPC is implemented in SQL language and returns `cashier_window_id` safely. For an already deployed project, run `fix_queue_rpc_ambiguity.sql` once in Supabase SQL Editor.
+
+## Administrator API additions
+
+| RPC | Access | Purpose |
+|---|---|---|
+| `POST /rest/v1/rpc/get_queue_system_status` | Public | Read the saved student-intake open/paused state and public message. |
+| `POST /rest/v1/rpc/get_admin_auth_email` | Public, fixed username only | Resolve `GNCICashier2026` to its registered Supabase Auth email; the Auth API still verifies the password. |
+| `POST /rest/v1/rpc/admin_set_queue_access` | Admin only | Persist pause/resume and record an audit event. |
+| `POST /rest/v1/rpc/admin_call_queue_ticket` | Admin only | Call a selected waiting ticket when its cashier has no current serving ticket. |
+
+`admin_set_queue_access` accepts `{ "p_enabled": false, "p_message": "..." }` to pause or `{ "p_enabled": true, "p_message": null }` to resume. `admin_call_queue_ticket` accepts `{ "p_ticket_id": "TICKET_UUID" }`. Existing staff RPCs remain available while student intake is paused.
+
+The admin username is an identifier, not a password. Create the corresponding Supabase Auth user with a real school-controlled email and a privately configured password, then run `admin_account_setup.sql` to set its `username` and `role`.

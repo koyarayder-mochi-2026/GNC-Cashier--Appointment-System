@@ -40,6 +40,16 @@ async function refresh() {
   try {
     const rows = await api.getPublicQueueStatus();
     render(rows);
+    const statusBanner = $('systemAccessBanner');
+    try {
+      const systemStatus = await api.getQueueSystemStatus();
+      const accessOpen = systemStatus?.student_access_enabled === true;
+      statusBanner.hidden = accessOpen;
+      statusBanner.textContent = accessOpen ? '' : (systemStatus?.status_message || 'Online student access is temporarily paused. Cashier staff will continue serving already-issued queue numbers.');
+    } catch (statusError) {
+      statusBanner.hidden = false;
+      statusBanner.textContent = 'Student access status could not be verified. Please check with the GNC cashier office. The public queue display is still updating.';
+    }
     $('connection').textContent = 'LIVE';
     $('connection').classList.add('online');
     $('errorBanner').hidden = true;

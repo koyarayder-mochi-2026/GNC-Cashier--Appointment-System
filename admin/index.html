@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b432d">
+  <meta name="description" content="Authorized GNC cashier queue administration">
+  <title>GNC | Queue Administration</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&family=Oswald:wght@500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="../assets/gnc-official-crest.png">
+  <link rel="stylesheet" href="../admin.css">
+</head>
+<body>
+  <section class="motto-band" aria-label="Guagua National Colleges motto">
+    <div class="motto-inner">
+      <div class="motto-item"><span class="motto-seal"><b>✣</b></span><span class="motto-copy"><strong>FIDES</strong><small>FAITH IN GOD AND ONE'S SELF.</small></span></div>
+      <i class="motto-diamond"></i>
+      <div class="motto-item"><span class="motto-seal"><svg viewBox="0 0 48 48"><path d="M7 11c7-3 12-1 17 3 5-4 10-6 17-3v25c-7-3-12-1-17 3-5-4-10-6-17-3zM24 14v25"/></svg></span><span class="motto-copy"><strong>SCIENTIA</strong><small>SEARCH FOR TRUTH AND KNOWLEDGE.</small></span></div>
+      <i class="motto-diamond"></i>
+      <div class="motto-item"><span class="motto-seal"><svg viewBox="0 0 48 48"><path d="M11 37c9-6 14-15 20-27 2 12-2 23-15 29zM16 35l-4 5"/></svg></span><span class="motto-copy"><strong>PATRIA</strong><small>LOVE FOR COUNTRY.</small></span></div>
+    </div>
+  </section>
+  <header class="admin-topbar">
+    <a class="brand" href="../index.html"><img src="../assets/gnc-official-crest.png" alt="GNC official seal"><span><strong>Guagua National Colleges, Inc.</strong><small>Fides, Scientia et Patria · Cashier Administration</small></span></a>
+    <div class="top-actions"><span id="connection" class="connection">CONNECTING</span><a href="../index.html">Student portal ↗</a><button id="signOutBtn" class="button button-ghost" type="button" hidden>Sign out</button></div>
+  </header>
+  <main class="admin-shell">
+    <section class="admin-heading"><p class="eyebrow">AUTHORIZED SYSTEM CONTROL</p><h1>Cashier Queue <em>Administration</em></h1><p>Control student ticket intake and manage the existing Cashier 1 and Cashier 2 queues. Pausing intake never deletes saved tickets or prevents the cashier team from serving students already in line.</p></section>
+
+    <section id="loginView" class="admin-login-card panel">
+      <div class="login-mark"><img src="../assets/gnc-official-crest.png" alt="GNC official seal"></div>
+      <p class="eyebrow">ADMINISTRATOR SIGN-IN</p><h2>Welcome back.</h2><p class="muted">This page is restricted to the authorized GNC administrator.</p>
+      <form id="adminLoginForm" class="form-stack" autocomplete="on">
+        <div><label for="adminUsername">Administrator username</label><input id="adminUsername" type="text" value="GNCICashier2026" autocomplete="username" autocapitalize="off" spellcheck="false" required></div>
+        <div><label for="adminPassword">Password</label><input id="adminPassword" type="password" autocomplete="current-password" required></div>
+        <button id="adminLoginBtn" class="button button-primary button-full" type="submit">Sign in securely <span>→</span></button>
+        <p class="form-foot">Your password is verified by Supabase Auth. It is never stored in this website.</p>
+      </form>
+      <div id="loginMessage" class="message hidden" role="alert"></div>
+    </section>
+
+    <section id="dashboardView" class="hidden" aria-live="polite">
+      <div class="admin-welcome"><div><p class="eyebrow">ADMIN CONTROL CENTER</p><h2 id="adminWelcomeName">Good day, Administrator.</h2><p>Signed in as <strong id="adminUsernameLabel">GNCICashier2026</strong></p></div><span class="admin-role-pill">ADMINISTRATOR</span></div>
+
+      <section class="system-control panel">
+        <div class="system-control-copy"><p class="eyebrow">GLOBAL STUDENT ACCESS</p><h3 id="systemStateTitle">Checking system state…</h3><p id="systemStateDescription">Loading saved settings from Supabase.</p><div class="system-meta">Last updated <strong id="systemUpdatedAt">—</strong></div></div>
+        <div class="system-control-actions"><span id="systemStatePill" class="state-pill state-checking">CHECKING</span><button id="pauseSystemBtn" class="button button-danger" type="button" disabled>Pause new queue numbers</button><button id="resumeSystemBtn" class="button button-primary" type="button" hidden>Resume student access</button></div>
+        <div class="pause-message-field"><label for="pauseMessage">Message shown to students (optional, up to 240 characters)</label><textarea id="pauseMessage" rows="2" maxlength="240" placeholder="Online queue access is temporarily paused by the cashier office. Please check again later."></textarea></div>
+      </section>
+
+      <div class="section-head"><div><p class="eyebrow">LIVE CASHIER OPERATIONS</p><h3>Manage the waiting line</h3><p>Call the next number or select a specific waiting ticket. Complete or mark the current ticket as no-show before calling another.</p></div><button id="refreshAdminBtn" class="button button-light" type="button">↻ Refresh</button></div>
+      <div id="counterManagement" class="counter-management"><div class="panel loading-panel">Loading cashier counters…</div></div>
+
+      <section class="audit-panel panel"><div class="section-head compact"><div><p class="eyebrow">ADMIN ACTIVITY</p><h3>System access history</h3><p>Recent pause and resume actions.</p></div></div><div id="eventHistory" class="event-history"><p class="muted">Loading activity history…</p></div></section>
+      <div id="dashboardMessage" class="message hidden" role="status"></div>
+    </section>
+  </main>
+  <footer class="admin-footer"><img src="../assets/gnc-official-crest.png" alt=""><span>GUAGUA NATIONAL COLLEGES, INC. · FIDES, SCIENTIA ET PATRIA</span><a href="../display.html" target="_blank" rel="noopener noreferrer">Open public queue display ↗</a></footer>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="../config.js"></script>
+  <script type="module" src="../admin.js"></script>
+</body>
+</html>

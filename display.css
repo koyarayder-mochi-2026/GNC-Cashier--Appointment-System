@@ -88,3 +88,5 @@ footer span{margin:0 5px;color:#b99525}
   .ticket-number{font-size:58px}
   .now-label{margin-top:29px}
 }
+
+.system-access-banner{margin:0 0 24px;padding:17px 22px;border-radius:12px;background:#fff3c9;border:1px solid #e2bd51;border-left:5px solid #b88d17;color:#624b0d;font-weight:700;line-height:1.55}.system-access-banner[hidden]{display:none}

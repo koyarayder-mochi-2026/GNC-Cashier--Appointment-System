@@ -352,3 +352,16 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
   html{scroll-behavior:auto}
   *,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+
+/* Persistent system-pause notice and closed student-access state. */
+.system-status-banner,.paused-access-panel{border:1px solid #e7c66a;background:linear-gradient(135deg,#fff8df,#fffdf6);color:#493b16;border-radius:14px;box-shadow:0 10px 30px rgba(42,56,28,.06)}
+.system-status-banner{margin:30px auto 0;padding:16px 20px;max-width:1120px;font-size:13px;font-weight:700;line-height:1.6;border-left:5px solid #d2a51e}
+.paused-access-panel{margin:42px auto 28px;max-width:1060px;padding:clamp(24px,4vw,42px);display:flex;gap:23px;align-items:flex-start}
+.paused-icon{width:54px;height:54px;flex:none;border-radius:15px;background:#f3dfa0;color:#71520b;display:grid;place-items:center;font-size:25px;font-weight:800}
+.paused-access-panel h2{font:700 clamp(24px,3vw,34px)/1.15 'Playfair Display',serif;color:#173e2b;margin:4px 0 10px}
+.paused-access-panel p:not(.eyebrow){color:#586d5b;font-size:14px;line-height:1.7;max-width:690px;margin:0 0 20px}
+.paused-access-panel .eyebrow{margin:0;color:#a27c13;font-size:10px;font-weight:800;letter-spacing:.15em}
+.app-paused-banner{margin:0 0 24px}
+.footer-admin-link{color:#f1d36c;text-decoration:underline;text-underline-offset:3px;margin-left:5px}
+@media(max-width:600px){.paused-access-panel{display:block;margin:26px auto;padding:22px}.paused-icon{margin-bottom:18px}.system-status-banner{margin-top:18px}}

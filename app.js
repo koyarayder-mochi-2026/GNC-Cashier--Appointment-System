@@ -1,7 +1,7 @@
 import { api, supabase, configReady, subscribeToQueueChanges } from './api.js';
 
 const $ = (id) => document.getElementById(id);
-const state = { session: null, profile: null, services: [], cashiers: [], allCashiers: [], currentTicket: null, staffCurrent: null, realtime: null, refreshTimer: null, activeView: 'studentView' };
+const state = { session: null, profile: null, services: [], cashiers: [], allCashiers: [], currentTicket: null, staffCurrent: null, realtime: null, refreshTimer: null, activeView: 'studentView', systemStatus: null, systemStatusLoaded: false, systemStatusError: null };
 
 function showToast(message, isError = false) {
   const toast = $('toast'); toast.textContent = message; toast.classList.toggle('error', isError); toast.classList.remove('hidden');
@@ -46,32 +46,41 @@ function showView(viewId) {
 async function initialize() {
   if (!configReady) {
     setConnection(false, 'Setup needed');
+    state.systemStatusError = 'Supabase is not configured. Student access is unavailable until the project settings are added.';
+    applySystemAccessUI();
     showMessage('authMessage', 'Add your Supabase Project URL and publishable/anon key in config.js, then reload this page.', 'error');
     return;
   }
   setConnection(true, 'Connected to Supabase');
+  await loadQueueSystemStatus();
   const { data: { session }, error } = await supabase.auth.getSession();
   if (error) console.error(error);
   await handleSession(session);
   supabase.auth.onAuthStateChange((_event, newSession) => {
     window.setTimeout(() => handleSession(newSession), 0);
   });
+  startPolling();
 }
 
 async function handleSession(session) {
   state.session = session;
+  await loadQueueSystemStatus();
   if (!session) {
     state.profile = null; state.currentTicket = null;
     $('staffNav').classList.add('hidden');
     cleanupRealtime();
-    $('authPanel').classList.remove('hidden'); $('appPanel').classList.add('hidden'); $('signOutBtn').classList.add('hidden');
+    $('appPanel').classList.add('hidden'); $('signOutBtn').classList.add('hidden');
+    applySystemAccessUI();
+    startPolling();
     return;
   }
-  $('authPanel').classList.add('hidden'); $('appPanel').classList.remove('hidden'); $('signOutBtn').classList.remove('hidden');
+  $('authPanel').classList.add('hidden'); $('studentAccessPaused').classList.add('hidden');
+  $('appPanel').classList.remove('hidden'); $('signOutBtn').classList.remove('hidden');
   try {
     await loadProfile();
     await Promise.all([loadServices(), loadCashiers(), loadPublicQueueBoard()]);
     updateProfileUI();
+    applySystemAccessUI();
     subscribeRealtime();
     if (state.profile.role === 'cashier' || state.profile.role === 'admin') $('staffNav').classList.remove('hidden');
     else $('staffNav').classList.add('hidden');
@@ -81,6 +90,55 @@ async function handleSession(session) {
     startPolling();
   } catch (err) {
     console.error(err); showToast(err.message || 'Unable to load your account.', true);
+  }
+}
+
+function applySystemAccessUI() {
+  const ready = state.systemStatusLoaded && !state.systemStatusError;
+  const enabled = ready && state.systemStatus?.student_access_enabled === true;
+  const signedIn = Boolean(state.session);
+  const message = ready
+    ? (state.systemStatus?.status_message || 'Online student access is temporarily paused by the cashier office. Please check again later.')
+    : (state.systemStatusError || 'Checking cashier system availability. Student sign-in and new queue numbers are temporarily unavailable.');
+
+  const pausedPanel = $('studentAccessPaused');
+  if (pausedPanel) {
+    pausedPanel.classList.toggle('hidden', signedIn || enabled);
+    $('pausedAccessMessage').textContent = message + ' Existing queue records are retained and cashier staff can continue serving already-issued numbers.';
+  }
+  const authPanel = $('authPanel');
+  if (authPanel && !signedIn) authPanel.classList.toggle('hidden', !enabled);
+  for (const id of ['navStudentAccess', 'headerAccess', 'heroQueueLink']) {
+    const link = $(id);
+    if (!link) continue;
+    link.href = enabled ? (signedIn ? '#studentView' : '#authPanel') : (signedIn ? '#appSystemPaused' : '#studentAccessPaused');
+    if (id === 'heroQueueLink') link.innerHTML = enabled ? (signedIn ? 'Open my queue <span>→</span>' : 'Get a queue number <span>→</span>') : 'Online queue paused <span>→</span>';
+    if (id === 'navStudentAccess') link.textContent = enabled ? (signedIn ? 'My portal' : 'Student Access') : 'Access Paused';
+    if (id === 'headerAccess') link.innerHTML = enabled ? (signedIn ? '<span aria-hidden="true">♙</span> My Portal' : '<span aria-hidden="true">♙</span> Access Portal') : '<span aria-hidden="true">Ⅱ</span> Access Paused';
+  }
+  const appPaused = $('appSystemPaused');
+  if (appPaused) {
+    appPaused.classList.toggle('hidden', !signedIn || enabled);
+    appPaused.textContent = message + ' Your existing ticket remains available under My queue. New queue numbers are disabled.';
+  }
+  const queueForm = $('queueForm');
+  if (queueForm) {
+    queueForm.querySelectorAll('input, select, textarea, button').forEach((control) => { control.disabled = !enabled; });
+  }
+}
+
+async function loadQueueSystemStatus() {
+  try {
+    state.systemStatus = await api.getQueueSystemStatus();
+    if (!state.systemStatus) throw new Error('The cashier system status has not been initialized. Ask the GNC administrator to apply the admin panel database upgrade.');
+    state.systemStatusLoaded = true;
+    state.systemStatusError = null;
+    applySystemAccessUI();
+  } catch (error) {
+    state.systemStatus = null;
+    state.systemStatusLoaded = false;
+    state.systemStatusError = error.message || 'Unable to verify cashier system availability.';
+    applySystemAccessUI();
   }
 }
 
@@ -145,6 +203,10 @@ async function renderMyTicket() {
 
 async function handleQueueRequest(event) {
   event.preventDefault(); clearMessage('queueFormMessage');
+  if (!state.systemStatusLoaded || state.systemStatusError || state.systemStatus?.student_access_enabled !== true) {
+    showMessage('queueFormMessage', state.systemStatus?.status_message || state.systemStatusError || 'Online queue access is temporarily paused.', 'error');
+    return;
+  }
   const serviceId = $('serviceSelect').value;
   if (!serviceId) { showMessage('queueFormMessage', 'Select a transaction first.', 'error'); return; }
   const button = $('getNumberBtn'); setBusy(button, true, 'Generating number…');
@@ -230,15 +292,16 @@ function subscribeRealtime() {
 }
 function startPolling() {
   if (state.refreshTimer) clearInterval(state.refreshTimer);
-  // Polling is a fallback in case a browser or network drops a Realtime event.
+  // Status and the public board refresh even when signed out so a pause/resume
+  // is immediately reflected on the landing page. Staff actions remain usable.
   state.refreshTimer = setInterval(async () => {
+    await loadQueueSystemStatus();
+    try { await loadPublicQueueBoard(); }
+    catch (e) { console.warn('Public queue refresh failed:', e.message); }
     if (!state.session) return;
-    try {
-      await loadPublicQueueBoard();
-      if (state.activeView === 'myQueueView') await loadMyQueue();
-      if (state.activeView === 'staffView') await loadStaffDashboard();
-    } catch (e) { console.warn('Queue refresh failed:', e.message); }
-  }, 12000);
+    if (state.activeView === 'myQueueView') await loadMyQueue();
+    if (state.activeView === 'staffView') await loadStaffDashboard();
+  }, 5000);
 }
 
 async function handleLogin(event) {

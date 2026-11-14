@@ -49,13 +49,13 @@
       <nav class="main-nav" aria-label="Main navigation">
         <a class="main-nav-link active" href="#home">Home</a>
         <a class="main-nav-link" href="#how-it-works">About</a>
-        <a class="main-nav-link" href="#authPanel">Student Access</a>
+        <a id="navStudentAccess" class="main-nav-link" href="#authPanel">Student Access</a>
         <a class="main-nav-link" href="display.html" target="_blank" rel="noopener noreferrer">Live Queue</a>
       </nav>
       <div class="header-right">
         <span id="connectionStatus" class="connection-pill"><i></i> Checking connection</span>
         <button id="signOutBtn" class="button button-ghost hidden" type="button">Sign out</button>
-        <a class="header-access" href="#authPanel"><span aria-hidden="true">♙</span> Access Portal</a>
+        <a id="headerAccess" class="header-access" href="#authPanel"><span aria-hidden="true">♙</span> Access Portal</a>
       </div>
     </header>
 
@@ -65,7 +65,7 @@
         <h1>Skip the line.<br><em>Keep your place.</em></h1>
         <p class="hero-text">A simpler way to handle your cashier transactions. Get your queue number online, monitor your turn, and return when your number is called.</p>
         <div class="hero-actions">
-          <a class="button button-gold" href="#authPanel">Get a queue number <span>→</span></a>
+          <a id="heroQueueLink" class="button button-gold" href="#authPanel">Get a queue number <span>→</span></a>
           <a class="button button-outline-light" href="display.html" target="_blank" rel="noopener noreferrer">View live queue</a>
         </div>
         <div class="hero-points">
@@ -90,7 +90,11 @@
   </section>
 
   <main class="page-shell">
-<section id="authPanel" class="auth-layout">
+    <section id="studentAccessPaused" class="paused-access-panel hidden" aria-live="polite">
+      <div class="paused-icon" aria-hidden="true">Ⅱ</div>
+      <div><p class="eyebrow">STUDENT ONLINE ACCESS</p><h2>Online queue access is temporarily unavailable.</h2><p id="pausedAccessMessage">The cashier office has paused new online queue numbers. Your existing queue data is saved. Please check again later.</p><a href="display.html" class="button button-primary">View live cashier queue <span>→</span></a></div>
+    </section>
+    <section id="authPanel" class="auth-layout">
       <div class="auth-intro">
         <p class="eyebrow">STUDENT ACCESS</p><h2>Welcome to<br>GNC Online Queue.</h2>
         <p>Sign in using your student account to get a cashier number and monitor the line from your phone or computer.</p>
@@ -117,6 +121,7 @@
     </section>
 
     <section id="appPanel" class="app-panel hidden">
+      <div id="appSystemPaused" class="system-status-banner app-paused-banner hidden" role="status" aria-live="polite"></div>
       <div class="welcome-row"><div><p class="eyebrow">STUDENT CASHIER PORTAL</p><h2 id="welcomeName">Hello, Student.</h2><p class="muted">Manage your cashier visit from one place.</p></div><div class="user-chip"><span class="avatar" id="userInitials">G</span><span><strong id="userNameChip">Student</strong><small id="userRoleChip">STUDENT</small></span></div></div>
       <nav class="app-nav" aria-label="Portal navigation"><button class="nav-tab active" data-view="studentView" type="button">Get a number</button><button class="nav-tab" data-view="myQueueView" type="button">My queue</button><button id="staffNav" class="nav-tab hidden" data-view="staffView" type="button">Cashier desk</button></nav>
 
@@ -157,7 +162,7 @@
     <section id="how-it-works" class="how-it-works"><div class="how-heading"><p class="eyebrow">SIMPLE AND CONVENIENT</p><h2>Three steps. No long line.</h2></div><div class="how-grid"><article><span>01</span><h4>Get a number online</h4><p>Sign in, choose your transaction, and receive a ticket for Cashier 1 or 2.</p></article><article><span>02</span><h4>Monitor your place</h4><p>Check the live queue board and your position while you wait elsewhere.</p></article><article><span>03</span><h4>Proceed when called</h4><p>Go to the assigned cashier when your number is being served. Complete payment in person.</p></article></div></section>
   </main>
 
-  <footer class="site-footer"><div class="footer-brand"><img class="footer-crest" src="assets/gnc-official-crest.png" alt="" width="42" height="42"><strong>GNC</strong><span>Student Cashier Queue</span></div><p>Guagua National Colleges, Inc. · Online queue concept</p><small>For school demonstration and testing. Confirm official cashier procedures before deployment.</small></footer>
+  <footer class="site-footer"><div class="footer-brand"><img class="footer-crest" src="assets/gnc-official-crest.png" alt="" width="42" height="42"><strong>GNC</strong><span>Student Cashier Queue</span></div><p>Guagua National Colleges, Inc. · Online queue concept</p><small>For school demonstration and testing. Confirm official cashier procedures before deployment. <a href="admin/" class="footer-admin-link">Administrator access</a></small></footer>
   <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
   <script src="config.js"></script>

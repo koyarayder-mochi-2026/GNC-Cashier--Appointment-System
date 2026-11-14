@@ -1,0 +1,19 @@
+ADMIN SETUP CHECKLIST
+
+1. Run the base supabase_setup.sql once on a fresh project. If an existing project is already running the queue, do not drop or recreate tables.
+2. Run the entire admin_panel_upgrade.sql on the existing queue project.
+3. In Supabase Authentication > Users, create the admin using a real school-controlled email and a strong password.
+4. Replace the placeholder email in admin_account_setup.sql and run the entire file.
+5. Open /admin and sign in with username GNCICashier2026 and the password set in Supabase Auth.
+6. Test pause: signed-out main page must hide registration/login and show the message. Test that existing tickets remain on the TV display and can still be called/completed from /admin. Resume and verify the main page returns to normal.
+7. Promote cashier users separately with role='cashier'.
+
+SECURITY
+- The browser contains only the Supabase publishable key.
+- Never copy the service_role or sb_secret key into the project.
+- No password is embedded in HTML, JS, SQL, or README.
+- Admin functions validate profiles.role='admin' in PostgreSQL.
+- The admin username is not sufficient to access the system without a valid Supabase Auth password.
+
+NOTE
+This package has been statically reviewed; it has not been deployed to or runtime-tested against the user's live Supabase project.

@@ -35,7 +35,7 @@ export const api = {
   async getProfile(userId) {
     const client = requireClient();
     return unwrap(await client.from('profiles')
-      .select('id,student_number,full_name,email,program,year_level,section,role')
+      .select('id,student_number,full_name,email,program,year_level,section,role,username')
       .eq('id', userId).single());
   },
 
@@ -64,6 +64,32 @@ export const api = {
   async getPublicQueueStatus() {
     const client = requireClient();
     return unwrap(await client.rpc('get_public_queue_status')) || [];
+  },
+
+  async getQueueSystemStatus() {
+    const client = requireClient();
+    const data = unwrap(await client.rpc('get_queue_system_status')) || [];
+    return Array.isArray(data) ? (data[0] || null) : data;
+  },
+
+  async getAdminAuthEmail(username) {
+    const client = requireClient();
+    return unwrap(await client.rpc('get_admin_auth_email', { p_username: String(username || '').trim() }));
+  },
+
+  async adminSetQueueAccess(enabled, message = null) {
+    const client = requireClient();
+    return unwrap(await client.rpc('admin_set_queue_access', {
+      p_enabled: Boolean(enabled),
+      p_message: message || null
+    }));
+  },
+
+  async getQueueSystemEvents(limit = 12) {
+    const client = requireClient();
+    return unwrap(await client.from('queue_system_events')
+      .select('id,student_access_enabled,status_message,created_at')
+      .order('created_at', { ascending: false }).limit(limit)) || [];
   },
 
   async getMyActiveTicket(userId, manilaDate) {
@@ -115,6 +141,11 @@ export const api = {
   async callNext(cashierWindowId) {
     const client = requireClient();
     return unwrap(await client.rpc('staff_call_next', { p_cashier_window_id: cashierWindowId }));
+  },
+
+  async adminCallTicket(ticketId) {
+    const client = requireClient();
+    return unwrap(await client.rpc('admin_call_queue_ticket', { p_ticket_id: ticketId }));
   },
 
   async updateStaffTicket({ ticketId, newStatus, staffNote = null }) {
