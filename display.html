@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b432d">
+  <meta name="description" content="GNC Student Cashier live queue display">
+  <title>GNC | Cashier Queue Display</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&family=Oswald:wght@500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="display.css">
+</head>
+<body>
+  <section class="motto-band" aria-label="Guagua National Colleges motto">
+    <div class="motto-inner">
+      <div class="motto-item"><span class="motto-seal"><b>✣</b></span><span class="motto-copy"><strong>FIDES</strong><small>FAITH IN GOD AND ONE'S SELF.</small></span></div>
+      <i class="motto-diamond"></i>
+      <div class="motto-item"><span class="motto-seal"><svg viewBox="0 0 48 48"><path d="M7 11c7-3 12-1 17 3 5-4 10-6 17-3v25c-7-3-12-1-17 3-5-4-10-6-17-3zM24 14v25"/></svg></span><span class="motto-copy"><strong>SCIENTIA</strong><small>SEARCH FOR TRUTH AND KNOWLEDGE.</small></span></div>
+      <i class="motto-diamond"></i>
+      <div class="motto-item"><span class="motto-seal"><svg viewBox="0 0 48 48"><path d="M11 37c9-6 14-15 20-27 2 12-2 23-15 29zM16 35l-4 5"/></svg></span><span class="motto-copy"><strong>PATRIA</strong><small>LOVE FOR COUNTRY.</small></span></div>
+    </div>
+  </section>
+  <header class="topbar">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">GNC</span>
+      <span><strong>Guagua National Colleges, Inc.</strong><small>Fides, Scientia et Patria · Student Cashier Services</small></span>
+    </a>
+    <div class="top-actions">
+      <span id="connection" class="connection">CONNECTING</span>
+      <button id="soundToggle" class="sound-button" type="button" aria-pressed="false">Enable voice announcements</button>
+      <a href="index.html">Student portal ↗</a>
+    </div>
+  </header>
+  <main class="screen">
+    <section class="intro"><p class="eyebrow">STUDENT CASHIER SERVICES · LIVE MONITOR</p><h1>Please wait for your number.</h1><p>Proceed to your assigned counter only when your ticket number is called.</p></section>
+    <section id="counterGrid" class="counter-grid" aria-live="polite">
+      <article class="counter-card loading"><p>Loading cashier status…</p></article>
+      <article class="counter-card loading"><p>Connecting to GNC queue…</p></article>
+    </section>
+    <section class="bottom-row"><div class="tip"><span class="tip-icon">i</span><span>Keep your queue ticket ready. Payment is completed in person at the assigned cashier.</span></div><div class="updated">Last updated <strong id="lastUpdated">—</strong></div></section>
+    <div id="errorBanner" class="error-banner" role="status" hidden></div>
+  </main>
+  <footer>GUAGUA NATIONAL COLLEGES, INC. <span>·</span> FIDES, SCIENTIA ET PATRIA <span>·</span> <span id="manilaClock">—</span></footer>
+  <script src="config.js"></script>
+  <script type="module" src="display.js"></script>
+</body>
+</html>

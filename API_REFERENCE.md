@@ -1,0 +1,164 @@
+# GNC Student Cashier Queue API
+
+The system uses Supabase's generated REST API (PostgREST) and Supabase Auth API. No separate Express server is required. The browser calls these endpoints through `api.js` and `@supabase/supabase-js`; database authorization is enforced by PostgreSQL Row Level Security and `SECURITY DEFINER` RPC functions.
+
+## Base URL and headers
+
+Base URL:
+
+```text
+https://YOUR-PROJECT-REF.supabase.co
+```
+
+Every REST request includes:
+
+```http
+apikey: YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY
+Content-Type: application/json
+```
+
+Protected requests also require the signed-in user's access token:
+
+```http
+Authorization: Bearer USER_ACCESS_TOKEN
+```
+
+Use the public publishable/anon key in the frontend. Never expose the `service_role` key or a secret key in browser JavaScript, HTML, CSS, or a public repository.
+
+## Authentication API
+
+These are handled using `supabase.auth` in `app.js`:
+
+| Operation | Supabase endpoint | Access |
+|---|---|---|
+| Register student | `POST /auth/v1/signup` | Public sign-up policy |
+| Sign in | `POST /auth/v1/token?grant_type=password` | Public |
+| Sign out | Supabase Auth SDK sign-out | Signed-in user |
+| Restore session | Supabase Auth SDK session restore | Browser session |
+
+At sign-up, the database trigger creates a `profiles` record and forces `role = 'student'`. The client cannot assign itself cashier/admin privileges.
+
+## Read endpoints
+
+| Operation | Method and path | Access | Response |
+|---|---|---|---|
+| List active cashier services | `GET /rest/v1/services?select=id,code,name,description&is_active=eq.true&order=name.asc` | Authenticated | Active services only |
+| List active cashier windows | `GET /rest/v1/cashier_windows?select=id,code,name,location_description,is_active&is_active=eq.true&order=code.asc` | Authenticated | Active counters |
+| Public counter board | `POST /rest/v1/rpc/get_public_queue_status` | Public publishable key | Counter name/code, open/closing flag, currently serving ticket, waiting count; no student data |
+| Get my active ticket | `GET /rest/v1/queue_tickets?...` | Authenticated; RLS limits to own ticket | Student's waiting/serving ticket |
+| Get staff queue | `GET /rest/v1/queue_tickets?...` | Cashier/admin; RLS limits to staff | Current counter's active queue |
+
+The public board RPC is intentionally public so the television display can work without a staff login. It returns only aggregate counts, whether the counter is accepting new tickets, and the ticket currently being served. It does not reveal student names, student numbers, email addresses, or notes.
+
+## Transaction RPC endpoints
+
+### Issue a queue ticket
+
+```http
+POST /rest/v1/rpc/take_queue_number
+Authorization: Bearer USER_ACCESS_TOKEN
+Content-Type: application/json
+```
+
+```json
+{
+  "p_service_id": "SERVICE_UUID",
+  "p_cashier_window_id": null,
+  "p_student_note": "Optional note, max 240 characters"
+}
+```
+
+Set `p_cashier_window_id` to a cashier UUID to select a specific counter, or `null` to automatically assign the shorter active line. Returns `ticket_id`, `ticket_code`, assigned counter, and date.
+
+### Get position in line
+
+```http
+POST /rest/v1/rpc/get_my_queue_position
+```
+
+```json
+{ "p_ticket_id": "TICKET_UUID" }
+```
+
+Returns the ticket's one-based position among waiting tickets. `0` means the student is currently being served. The function verifies ticket ownership.
+
+### Cancel my waiting ticket
+
+```http
+POST /rest/v1/rpc/cancel_my_queue_ticket
+```
+
+```json
+{ "p_ticket_id": "TICKET_UUID" }
+```
+
+A student can cancel only their own ticket while it is waiting and dated today in `Asia/Manila`.
+
+### Cashier calls the next ticket
+
+```http
+POST /rest/v1/rpc/staff_call_next
+```
+
+```json
+{ "p_cashier_window_id": "CASHIER_WINDOW_UUID" }
+```
+
+Cashier/admin role required. Returns the called ticket UUID. The function locks the counter, refuses to call a second student while one is serving, and claims the oldest waiting ticket atomically.
+
+### Cashier completes or skips a ticket
+
+```http
+POST /rest/v1/rpc/staff_update_queue_ticket
+```
+
+```json
+{
+  "p_ticket_id": "TICKET_UUID",
+  "p_new_status": "completed",
+  "p_staff_note": null
+}
+```
+
+Allowed new statuses are `completed`, `no_show`, and `cancelled`, subject to the current ticket state. Cashier/admin role required.
+
+## Example: direct REST request from a backend or API client
+
+```bash
+curl --request POST \
+  --url 'https://YOUR-PROJECT-REF.supabase.co/rest/v1/rpc/get_public_queue_status' \
+  --header 'apikey: YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY' \
+  --header 'Content-Type: application/json' \
+  --data '{}'
+```
+
+For an authenticated operation, add:
+
+```bash
+--header 'Authorization: Bearer USER_ACCESS_TOKEN'
+```
+
+## API security model
+
+- Supabase Auth issues the user access token.
+- RLS limits profile and ticket reads to the owner or authorized staff.
+- Students cannot directly insert, update, or delete queue ticket rows.
+- Ticket creation, cancellation, call-next, and cashier status changes use database RPC functions that validate the caller.
+- Ticket number generation uses a transactional counter; a day-scoped advisory lock keeps automatic shortest-line selection from racing against simultaneous requests.
+- A partial unique index prevents more than one active ticket per student per Philippine calendar day and more than one currently-serving ticket per counter/day.
+- The internal ticket counter table is not directly accessible to browser users.
+
+## Error responses
+
+Supabase returns standard PostgREST JSON error bodies with fields such as `code`, `message`, `details`, and `hint`. The frontend displays the returned message in the relevant form or toast. Common expected errors include:
+
+- Student already has an active ticket today.
+- No cashier counter is open.
+- Selected cashier is unavailable.
+- Ticket is no longer cancellable.
+- Staff account is not authorized.
+- A ticket is already being served at the selected cashier.
+
+## Note on deployment
+
+These endpoints become live only after `supabase_setup.sql` is run in the target Supabase project and the frontend `config.js` is populated with that project's URL and publishable key. This repository contains the implementation, but does not have access to deploy into or validate against the school's Supabase account.
