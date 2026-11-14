@@ -166,7 +166,7 @@ These endpoints become live only after `supabase_setup.sql` is run in the target
 
 ### RPC ambiguity fix (2026-11-14)
 
-The ticket creation RPC returns `result_cashier_window_id` and `result_queue_date` rather than output names that duplicate table columns. This avoids PL/pgSQL output-variable collisions in the atomic queue-counter upsert. The public queue summary RPC is implemented in SQL language and returns `cashier_window_id` safely. For an already deployed project, run `fix_queue_rpc_ambiguity.sql` once in Supabase SQL Editor.
+The ticket creation RPC returns `result_cashier_window_id` and `result_queue_date` rather than output names that duplicate table columns. This avoids PL/pgSQL output-variable collisions in the atomic queue-counter upsert. The public queue summary RPC is implemented in SQL language and returns `cashier_window_id` safely. The current complete SQL setup already includes this correction; use `admin_call_rpc_and_notifications.sql` for the current missing admin-call RPC repair.
 
 ## Administrator API additions
 
@@ -180,3 +180,41 @@ The ticket creation RPC returns `result_cashier_window_id` and `result_queue_dat
 `admin_set_queue_access` accepts `{ "p_enabled": false, "p_message": "..." }` to pause or `{ "p_enabled": true, "p_message": null }` to resume. `admin_call_queue_ticket` accepts `{ "p_ticket_id": "TICKET_UUID" }`. Existing staff RPCs remain available while student intake is paused.
 
 The admin username is an identifier, not a password. Create the corresponding Supabase Auth user with a real school-controlled email and a privately configured password, then run `admin_account_setup.sql` to set its `username` and `role`.
+
+### Explicit student-profile relationship
+
+Queue list queries must select the student profile using the `student_id` foreign key:
+
+```js
+.select('id,ticket_code,status,created_at,student_note,profiles!queue_tickets_student_id_fkey(full_name,student_number),services(name)')
+```
+
+`queue_tickets` also references `profiles` through `called_by` and `handled_by`; an unqualified
+`profiles(...)` embed is ambiguous in PostgREST.
+
+
+## Queue-call notifications
+
+The admin and cashier call-next workflows invoke the Supabase Edge Function `notify-student-turn` after the `staff_call_next` or `admin_call_queue_ticket` RPC succeeds. The Edge Function accepts `{ "ticket_id": "UUID" }`, verifies the signed-in staff role, verifies that the referenced ticket is in `serving` status, and confirms the caller is the staff member recorded in `called_by`. It then sends Web Push to that student's active subscriptions and email only when their `queue_notification_preferences.email_enabled` setting is true.
+
+Students manage alert preferences and browser subscriptions from the My Queue page. Notification tables are private under RLS. Delivery requires deploying `supabase/functions/notify-student-turn` and configuring VAPID secrets for Web Push and/or Resend secrets for email. The browser contains only the public VAPID key and Supabase publishable key.
+
+
+The notification preference row has `device_enabled` and `email_enabled` flags. In-tab browser alerts require the student to opt in and grant notification permission. Background Web Push additionally requires a saved `queue_push_subscriptions` row and VAPID secrets.
+
+
+The exact admin RPC repair for an existing deployment is `admin_call_rpc_and_notifications.sql`. Run the entire script once in Supabase SQL Editor; it also installs the opt-in notification preference/subscription tables.
+
+### Edge Function: notify the student whose number is called
+
+```http
+POST /functions/v1/notify-student-turn
+Authorization: Bearer STAFF_ACCESS_TOKEN
+Content-Type: application/json
+```
+
+```json
+{ "ticket_id": "TICKET_UUID" }
+```
+
+Only an authenticated `admin` or `cashier` may call this function, and the ticket must already be in `serving` status. The function sends to the student attached to that ticket only. Device delivery is Web Push (VAPID + saved browser subscription); email delivery is opt-in and uses the student's current Supabase Auth email via a verified Resend sender. The response contains `push.sent`, `push.failed`, `push.skipped`, `email.sent`, and `email.skipped` so the cashier UI can report which channel delivered. The two channels fail independently.

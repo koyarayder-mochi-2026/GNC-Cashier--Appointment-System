@@ -4,5 +4,7 @@
 window.GNC_SUPABASE_CONFIG = {
   url: 'https://eqcpsoekurzfbgykhydo.supabase.co',
   anonKey: 'sb_publishable_PLWxwoRwvZ_6UEtgn9CoNQ_ik9U-LCe',
-  adminUsername: 'GNCICashier2026'
+  adminUsername: 'GNCICashier2026',
+  // Fill this with the PUBLIC VAPID key generated for Web Push. Private key stays in Supabase Edge Function secrets.
+  vapidPublicKey: ''
 };

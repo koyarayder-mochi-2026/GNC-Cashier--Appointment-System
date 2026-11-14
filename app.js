@@ -1,7 +1,7 @@
 import { api, supabase, configReady, subscribeToQueueChanges } from './api.js';
 
 const $ = (id) => document.getElementById(id);
-const state = { session: null, profile: null, services: [], cashiers: [], allCashiers: [], currentTicket: null, staffCurrent: null, realtime: null, refreshTimer: null, activeView: 'studentView', systemStatus: null, systemStatusLoaded: false, systemStatusError: null };
+const state = { session: null, profile: null, services: [], cashiers: [], allCashiers: [], currentTicket: null, staffCurrent: null, realtime: null, refreshTimer: null, activeView: 'studentView', systemStatus: null, systemStatusLoaded: false, systemStatusError: null, notificationPreferences: { email_enabled: false, device_enabled: false }, notifiedTicketIds: new Set() };
 
 function showToast(message, isError = false) {
   const toast = $('toast'); toast.textContent = message; toast.classList.toggle('error', isError); toast.classList.remove('hidden');
@@ -34,13 +34,13 @@ function switchAuthTab(tab) {
   document.querySelectorAll('[data-auth-tab]').forEach(b => b.classList.toggle('active', b.dataset.authTab === tab));
   $('loginForm').classList.toggle('hidden', tab !== 'login'); $('signupForm').classList.toggle('hidden', tab !== 'signup'); clearMessage('authMessage');
 }
-function showView(viewId) {
+async function showView(viewId) {
   if (viewId === 'staffView' && !['cashier', 'admin'].includes(state.profile?.role)) return;
   state.activeView = viewId;
   document.querySelectorAll('.view-section').forEach(s => s.classList.toggle('hidden', s.id !== viewId));
   document.querySelectorAll('.nav-tab').forEach(b => b.classList.toggle('active', b.dataset.view === viewId));
-  if (viewId === 'myQueueView') loadMyQueue();
-  if (viewId === 'staffView') loadStaffDashboard();
+  if (viewId === 'myQueueView') await loadMyQueue();
+  if (viewId === 'staffView') await loadStaffDashboard();
 }
 
 async function initialize() {
@@ -80,12 +80,14 @@ async function handleSession(session) {
     await loadProfile();
     await Promise.all([loadServices(), loadCashiers(), loadPublicQueueBoard()]);
     updateProfileUI();
+    await loadNotificationSettings();
     applySystemAccessUI();
     subscribeRealtime();
     if (state.profile.role === 'cashier' || state.profile.role === 'admin') $('staffNav').classList.remove('hidden');
     else $('staffNav').classList.add('hidden');
-    showView('studentView');
-    await loadMyQueue();
+    const requestedView = new URLSearchParams(window.location.search).get('view');
+    await showView(requestedView === 'myQueueView' ? 'myQueueView' : 'studentView');
+    if (requestedView !== 'myQueueView') await loadMyQueue();
     if (['cashier','admin'].includes(state.profile.role)) await loadStaffDashboard();
     startPolling();
   } catch (err) {
@@ -152,6 +154,170 @@ function updateProfileUI() {
   $('userInitials').textContent = name.split(/\s+/).slice(0,2).map(x => x[0]).join('').toUpperCase() || 'G';
 }
 
+function setNotificationMessage(message, isError = false) {
+  const node = $('notificationSettingsMessage');
+  if (!node) return;
+  node.textContent = message || '';
+  node.classList.toggle('error', Boolean(isError));
+  node.classList.toggle('success', Boolean(message) && !isError);
+}
+
+function urlBase64ToUint8Array(value) {
+  const padding = '='.repeat((4 - value.length % 4) % 4);
+  const base64 = (value + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map(char => char.charCodeAt(0)));
+}
+
+function currentStudentEmail() {
+  return String(state.session?.user?.email || state.profile?.email || '').trim();
+}
+
+async function loadNotificationSettings() {
+  if (!state.profile || !state.session) return;
+  const studentEmail = currentStudentEmail();
+  $('notificationEmailLabel').textContent = studentEmail || 'No email address is saved on your profile.';
+  $('emailAlertsEnabled').disabled = !studentEmail;
+  $('saveEmailAlertsBtn').disabled = !studentEmail;
+  try {
+    state.notificationPreferences = await api.getNotificationPreferences(state.session.user.id);
+    $('emailAlertsEnabled').checked = Boolean(state.notificationPreferences.email_enabled);
+  } catch (error) {
+    setNotificationMessage('Notification preferences are not ready. Apply the notification SQL migration first.', true);
+  }
+  try {
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      const registration = await navigator.serviceWorker.getRegistration('./');
+      const subscription = await registration?.pushManager.getSubscription();
+      const permissionGranted = 'Notification' in window && Notification.permission === 'granted';
+      const deviceEnabled = Boolean(state.notificationPreferences.device_enabled);
+      $('disablePushNotificationsBtn').hidden = !deviceEnabled && !subscription;
+      const publicVapidConfigured = Boolean(window.GNC_SUPABASE_CONFIG?.vapidPublicKey);
+      $('enablePushNotificationsBtn').textContent = subscription && deviceEnabled
+        ? 'Background alerts enabled'
+        : (deviceEnabled && permissionGranted && publicVapidConfigured
+          ? 'Enable background alerts' : (deviceEnabled && permissionGranted
+            ? 'Foreground alerts enabled' : 'Enable device alerts'));
+      $('pushNotificationStatus').textContent = subscription && deviceEnabled
+        ? 'Background push alerts are subscribed on this browser.'
+        : (subscription && !deviceEnabled
+          ? 'This browser has a saved push subscription, but alerts are turned off for your account. Enable them to resume notifications.'
+          : (deviceEnabled && permissionGranted
+            ? 'Foreground alerts work while the GNC portal is open. Background alerts require VAPID setup and a browser subscription.'
+            : (deviceEnabled
+              ? 'Device alerts are enabled on your account. Allow browser notifications on this device to receive alerts here.'
+              : 'Allow notifications on this device. Works on supported browsers over HTTPS.')));
+    }
+  } catch (error) {
+    console.warn('Unable to inspect push subscription:', error);
+  }
+}
+
+async function saveEmailNotificationPreference() {
+  if (!state.session || !currentStudentEmail()) {
+    setNotificationMessage('Your Supabase Auth account does not have a verified email address.', true);
+    return;
+  }
+  const button = $('saveEmailAlertsBtn');
+  setBusy(button, true, 'Saving…');
+  try {
+    state.notificationPreferences = await api.setEmailNotifications(
+      state.session.user.id,
+      $('emailAlertsEnabled').checked
+    );
+    setNotificationMessage(state.notificationPreferences.email_enabled
+      ? `Email alerts enabled for ${currentStudentEmail()}.`
+      : 'Email alerts have been turned off.');
+  } catch (error) {
+    setNotificationMessage(error.message || 'Could not save the email preference.', true);
+  } finally {
+    setBusy(button, false);
+  }
+}
+
+async function enableDeviceNotifications() {
+  const button = $('enablePushNotificationsBtn');
+  setBusy(button, true, 'Enabling…');
+  try {
+    if (!state.session) throw new Error('Sign in to enable device notifications.');
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+      throw new Error('This browser does not support web push notifications. Try an up-to-date browser on HTTPS.');
+    }
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') throw new Error('Notification permission was not granted. Enable notifications in your browser settings.');
+    const registration = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+    const vapidKey = window.GNC_SUPABASE_CONFIG?.vapidPublicKey;
+    if (vapidKey) {
+      const existing = await registration.pushManager.getSubscription();
+      const subscription = existing || await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey)
+      });
+      await api.savePushSubscription(state.session.user.id, subscription);
+    }
+    state.notificationPreferences = await api.setDeviceNotifications(state.session.user.id, true);
+    $('disablePushNotificationsBtn').hidden = false;
+    $('enablePushNotificationsBtn').textContent = vapidKey ? 'Background alerts enabled' : 'Foreground alerts enabled';
+    $('pushNotificationStatus').textContent = vapidKey
+      ? 'Background push alerts are enabled on this browser.'
+      : 'Foreground alerts are enabled while the GNC portal is open. Background alerts require VAPID setup by the site administrator.';
+    setNotificationMessage(vapidKey
+      ? 'Device push notifications are enabled on this browser.'
+      : 'Device alerts are enabled while this portal is open. Background device alerts will work after the administrator configures Web Push.');
+  } catch (error) {
+    setNotificationMessage(error.message || 'Could not enable device notifications.', true);
+  } finally {
+    setBusy(button, false);
+  }
+}
+
+async function disableDeviceNotifications() {
+  const button = $('disablePushNotificationsBtn');
+  setBusy(button, true, 'Disabling…');
+  try {
+    const registration = await navigator.serviceWorker.getRegistration('./');
+    const subscription = await registration?.pushManager.getSubscription();
+    // device_enabled is a per-account preference, so disabling it also removes
+    // every saved endpoint; otherwise a different device could silently reactivate.
+    await api.removeAllPushSubscriptions(state.session.user.id);
+    if (subscription) await subscription.unsubscribe();
+    state.notificationPreferences = await api.setDeviceNotifications(state.session.user.id, false);
+    $('disablePushNotificationsBtn').hidden = true;
+    $('enablePushNotificationsBtn').textContent = 'Enable device alerts';
+    $('pushNotificationStatus').textContent = 'Device alerts are disabled for this account and its saved devices.';
+    setNotificationMessage('Device notifications have been disabled.');
+  } catch (error) {
+    setNotificationMessage(error.message || 'Could not disable device notifications.', true);
+  } finally {
+    setBusy(button, false);
+  }
+}
+
+async function notifyCalledStudent(ticketId) {
+  if (!ticketId) return { push: { sent: 0 }, email: { sent: false } };
+  try {
+    return await api.notifyStudentTurn(ticketId);
+  } catch (error) {
+    console.warn('Queue notification delivery failed:', error);
+    return { deliveryError: error.message || 'Notification service is not deployed.' };
+  }
+}
+
+function notificationSummary(result) {
+  if (result?.deliveryError) return ' Student alert delivery is not configured yet.';
+  const push = Number(result?.push?.sent || 0);
+  const email = Boolean(result?.email?.sent);
+  if (push || email) {
+    const channels = [push ? 'device' : null, email ? 'email' : null].filter(Boolean).join(' and ');
+    return ` Student notified by ${channels}.`;
+  }
+  const skipped = [result?.push?.skipped, result?.email?.skipped]
+    .filter(value => typeof value === 'string' && value.trim());
+  return skipped.length
+    ? ` No alert was delivered. ${skipped.join(' ' )}`
+    : ' No alert was delivered; ask the student to enable device or email notifications.';
+}
+
 async function loadServices() {
   state.services = await api.listServices();
   $('serviceSelect').innerHTML = '<option value="">Select a transaction</option>' + state.services.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
@@ -174,11 +340,47 @@ async function loadPublicQueueBoard() {
     </div>`).join('');
 }
 
+async function showForegroundTurnNotification(ticket) {
+  // Keep an in-tab notification fallback even when a push subscription exists:
+  // if the push provider rejects an expired subscription, the open page can still alert.
+  if (!ticket || !state.notificationPreferences.device_enabled) return;
+  if (state.notifiedTicketIds.has(ticket.id)) return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const title = 'GNC Cashier — Your turn';
+  const body = `Your number ${ticket.ticket_code} is now being served at ${ticket.cashier_windows?.name || 'the cashier'}. Please proceed to the counter.`;
+  const notificationTag = `gnc-${ticket.id}-${ticket.called_at || ticket.id}`;
+  try {
+    const registration = await navigator.serviceWorker?.getRegistration();
+    if (registration?.showNotification) {
+      await registration.showNotification(title, {
+        body,
+        icon: '/assets/gnc-official-crest.png',
+        badge: '/assets/gnc-official-crest.png',
+        tag: notificationTag,
+        renotify: false,
+        requireInteraction: true,
+        data: { url: '/?view=myQueueView' }
+      });
+    } else {
+      new Notification(title, { body, icon: '/assets/gnc-official-crest.png', tag: notificationTag, renotify: false });
+    }
+    state.notifiedTicketIds.add(ticket.id);
+  } catch (error) {
+    console.warn('Foreground notification failed:', error);
+  }
+}
+
 async function loadMyQueue() {
   if (!state.profile) return;
   const date = currentManilaDate();
   try { state.currentTicket = await api.getMyActiveTicket(state.session.user.id, date); }
   catch (error) { console.error(error); return; }
+  // Alert on the waiting -> serving transition, or when a student opens/returns
+  // to the portal after the ticket has already been called. Notification tags
+  // prevent duplicate OS alerts for the same ticket/call timestamp.
+  if (state.currentTicket?.status === 'serving') {
+    await showForegroundTurnNotification(state.currentTicket);
+  }
   renderMyTicket();
 }
 async function renderMyTicket() {
@@ -218,8 +420,8 @@ async function handleQueueRequest(event) {
     });
     showMessage('queueFormMessage', `Your number is ${result.ticket_code} for ${result.cashier_window_name}. Check “My queue” to track your position.`, 'success');
     $('studentNote').value = '';
-    await Promise.all([loadMyQueue(), loadPublicQueueBoard()]);
-    showView('myQueueView');
+    await loadPublicQueueBoard();
+    await showView('myQueueView');
     showToast(`Queue number ${result.ticket_code} issued.`);
   } catch (err) {
     showMessage('queueFormMessage', err.message || 'Could not issue a queue number.', 'error');
@@ -259,8 +461,10 @@ async function callNext() {
   const windowId = $('staffCashierSelect').value; if (!windowId) return;
   const button = $('callNextBtn'); setBusy(button, true, 'Calling…');
   try {
-    await api.callNext(windowId);
-    showToast('Next queue number called.'); await Promise.all([loadStaffDashboard(), loadPublicQueueBoard()]);
+    const ticketId = await api.callNext(windowId);
+    const notificationResult = await notifyCalledStudent(ticketId);
+    showToast(`Next queue number called.${notificationSummary(notificationResult)}`);
+    await Promise.all([loadStaffDashboard(), loadPublicQueueBoard()]);
   } catch (err) { showToast(err.message, true); }
   finally { setBusy(button, false); await loadStaffDashboard(); }
 }
@@ -286,7 +490,7 @@ function subscribeRealtime() {
   cleanupRealtime();
   state.realtime = subscribeToQueueChanges(async () => {
     await loadPublicQueueBoard();
-    if (state.activeView === 'myQueueView') await loadMyQueue();
+    await loadMyQueue();
     if (state.activeView === 'staffView') await loadStaffDashboard();
   });
 }
@@ -299,7 +503,11 @@ function startPolling() {
     try { await loadPublicQueueBoard(); }
     catch (e) { console.warn('Public queue refresh failed:', e.message); }
     if (!state.session) return;
-    if (state.activeView === 'myQueueView') await loadMyQueue();
+    // Poll the student's active ticket while device alerts are enabled, even
+    // on another portal page; otherwise the in-tab fallback would be view-bound.
+    if (state.activeView === 'myQueueView' || state.notificationPreferences.device_enabled) {
+      await loadMyQueue();
+    }
     if (state.activeView === 'staffView') await loadStaffDashboard();
   }, 5000);
 }
@@ -348,5 +556,8 @@ $('staffCashierSelect').addEventListener('change', loadStaffDashboard);
 $('callNextBtn').addEventListener('click', callNext);
 $('completeTicketBtn').addEventListener('click', () => updateCurrentTicket('completed'));
 $('skipTicketBtn').addEventListener('click', () => updateCurrentTicket('no_show'));
+$('saveEmailAlertsBtn').addEventListener('click', saveEmailNotificationPreference);
+$('enablePushNotificationsBtn').addEventListener('click', enableDeviceNotifications);
+$('disablePushNotificationsBtn').addEventListener('click', disableDeviceNotifications);
 
 initialize().catch(err => { console.error(err); setConnection(false, 'Connection error'); showToast(err.message || 'Unable to connect to Supabase.', true); });

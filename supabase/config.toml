@@ -1,0 +1,4 @@
+project_id = "eqcpsoekurzfbgykhydo"
+
+[functions.notify-student-turn]
+verify_jwt = true

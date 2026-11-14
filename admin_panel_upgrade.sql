@@ -1,3 +1,10 @@
+-- GNC ADMIN PANEL UPGRADE — COMPLETE FILE
+-- IMPORTANT: In Supabase SQL Editor, replace the editor contents with this ENTIRE file.
+-- Press Ctrl+A, paste the complete file, then click Run. Do not run only a selected section.
+-- The unterminated dollar-quoted string error occurs when a closing delimiter is sent
+-- without its matching opening function definition. This full file contains all sections.
+-- Run from top to bottom; do not start at the ticket issuance function's closing line.
+
 -- ============================================================================
 -- GNC Student Cashier Virtual Queue: Admin control panel upgrade
 -- Run the ENTIRE file in Supabase SQL Editor on the existing GNC queue schema.
@@ -382,7 +389,49 @@ begin
 end;
 $admin_call_queue_ticket$;
 
--- 6) Least-privilege execution grants.
+
+-- 6) Student opt-in notification preferences and Web Push subscriptions.
+create table if not exists public.queue_notification_preferences (
+  user_id uuid primary key references public.profiles(id) on delete cascade,
+  email_enabled boolean not null default false,
+  device_enabled boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table public.queue_notification_preferences add column if not exists device_enabled boolean not null default false;
+alter table public.queue_notification_preferences enable row level security;
+revoke all on public.queue_notification_preferences from public, anon;
+grant select, insert, update, delete on public.queue_notification_preferences to authenticated;
+drop policy if exists queue_notification_preferences_owner_all on public.queue_notification_preferences;
+create policy queue_notification_preferences_owner_all on public.queue_notification_preferences
+  for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+drop trigger if exists queue_notification_preferences_set_updated_at on public.queue_notification_preferences;
+create trigger queue_notification_preferences_set_updated_at before update on public.queue_notification_preferences
+  for each row execute function public.set_updated_at();
+
+create table if not exists public.queue_push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  endpoint text not null unique,
+  p256dh text not null,
+  auth text not null,
+  user_agent text,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists idx_queue_push_subscriptions_user_active on public.queue_push_subscriptions(user_id, is_active);
+alter table public.queue_push_subscriptions enable row level security;
+revoke all on public.queue_push_subscriptions from public, anon;
+grant select, insert, update, delete on public.queue_push_subscriptions to authenticated;
+drop policy if exists queue_push_subscriptions_owner_all on public.queue_push_subscriptions;
+create policy queue_push_subscriptions_owner_all on public.queue_push_subscriptions
+  for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+drop trigger if exists queue_push_subscriptions_set_updated_at on public.queue_push_subscriptions;
+create trigger queue_push_subscriptions_set_updated_at before update on public.queue_push_subscriptions
+  for each row execute function public.set_updated_at();
+
+-- 7) Least-privilege execution grants.
 revoke all on function public.get_queue_system_status() from public;
 grant execute on function public.get_queue_system_status() to anon, authenticated;
 revoke all on function public.admin_set_queue_access(boolean, text) from public;
@@ -391,7 +440,7 @@ revoke all on function public.take_queue_number(uuid, uuid, text) from public;
 grant execute on function public.take_queue_number(uuid, uuid, text) to authenticated;
 revoke all on function public.get_admin_auth_email(text) from public;
 grant execute on function public.get_admin_auth_email(text) to anon, authenticated;
-revoke all on function public.admin_call_queue_ticket(uuid) from public;
+revoke all on function public.admin_call_queue_ticket(uuid) from public, anon;
 grant execute on function public.admin_call_queue_ticket(uuid) to authenticated;
 
 -- Existing cashiers/admins must remain able to call and complete already-issued

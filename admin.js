@@ -47,6 +47,23 @@ function speakTicket(ticketCode, cashierName) {
   window.speechSynthesis.speak(utterance);
 }
 
+async function sendTurnAlert(ticketId) {
+  try {
+    const result = await api.notifyStudentTurn(ticketId);
+    const pushSent = Number(result?.push?.sent || 0);
+    const emailSent = Boolean(result?.email?.sent);
+    if (pushSent || emailSent) return `Student alert sent${pushSent ? ' to device' : ''}${emailSent ? (pushSent ? ' and email' : ' by email') : ''}.`;
+    const skipped = [result?.push?.skipped, result?.email?.skipped]
+      .filter(value => typeof value === 'string' && value.trim());
+    return skipped.length
+      ? `Number called; no notification delivered. ${skipped.join(' ')}`
+      : 'Number called; no student notification was delivered. Check the student alert settings.';
+  } catch (error) {
+    console.warn('Student turn alert failed:', error);
+    return 'Number called, but notification delivery is not configured yet.';
+  }
+}
+
 async function signIn(event) {
   event.preventDefault();
   hideMessage('loginMessage');
@@ -225,11 +242,13 @@ async function runAction(action, details) {
       await api.adminSetQueueAccess(true, null);
       toast('Student queue access has been reopened.');
     } else if (action === 'next') {
-      await api.callNext(details.windowId);
-      toast('Next queue number called.');
+      const ticketId = await api.callNext(details.windowId);
+      const alertStatus = await sendTurnAlert(ticketId);
+      toast(`Next queue number called. ${alertStatus}`);
     } else if (action === 'call-selected') {
       const result = await api.adminCallTicket(details.ticketId);
-      toast(`${result?.ticket_code || 'Queue number'} called at ${result?.cashier_window_name || details.windowName}.`);
+      const alertStatus = await sendTurnAlert(result?.ticket_id);
+      toast(`${result?.ticket_code || 'Queue number'} called at ${result?.cashier_window_name || details.windowName}. ${alertStatus}`);
       if (result?.ticket_code) speakTicket(result.ticket_code, result.cashier_window_name || details.windowName);
     } else if (action === 'complete' || action === 'no-show') {
       await api.updateStaffTicket({

@@ -976,3 +976,37 @@ $verify_queue_settings$;
 -- ============================================================================
 -- END OF ADMIN PANEL UPGRADE
 -- ============================================================================
+
+
+-- 17. Student opt-in notifications (Web Push and email).
+create table if not exists public.queue_notification_preferences (
+  user_id uuid primary key references public.profiles(id) on delete cascade,
+  email_enabled boolean not null default false,
+  device_enabled boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create table if not exists public.queue_push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  endpoint text not null unique,
+  p256dh text not null,
+  auth text not null,
+  user_agent text,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists idx_queue_push_subscriptions_user_active on public.queue_push_subscriptions(user_id, is_active);
+alter table public.queue_notification_preferences enable row level security;
+alter table public.queue_push_subscriptions enable row level security;
+revoke all on public.queue_notification_preferences, public.queue_push_subscriptions from public, anon;
+grant select, insert, update, delete on public.queue_notification_preferences, public.queue_push_subscriptions to authenticated;
+drop policy if exists queue_notification_preferences_owner_all on public.queue_notification_preferences;
+create policy queue_notification_preferences_owner_all on public.queue_notification_preferences for all to authenticated using(user_id=auth.uid()) with check(user_id=auth.uid());
+drop policy if exists queue_push_subscriptions_owner_all on public.queue_push_subscriptions;
+create policy queue_push_subscriptions_owner_all on public.queue_push_subscriptions for all to authenticated using(user_id=auth.uid()) with check(user_id=auth.uid());
+drop trigger if exists queue_notification_preferences_set_updated_at on public.queue_notification_preferences;
+create trigger queue_notification_preferences_set_updated_at before update on public.queue_notification_preferences for each row execute function public.set_updated_at();
+drop trigger if exists queue_push_subscriptions_set_updated_at on public.queue_push_subscriptions;
+create trigger queue_push_subscriptions_set_updated_at before update on public.queue_push_subscriptions for each row execute function public.set_updated_at();

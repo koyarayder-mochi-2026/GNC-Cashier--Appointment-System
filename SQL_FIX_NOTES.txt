@@ -1,5 +1,3 @@
-The included fix_queue_rpc_ambiguity.sql is the complete replacement patch.
-Copy the ENTIRE file into Supabase SQL Editor and run it in one execution.
-It replaces take_queue_number with collision-proof result_* output names,
-recreates get_public_queue_status as a SQL function, restores RPC grants,
-and requests a PostgREST schema reload.
+CURRENT ADMIN RPC FIX
+
+For the missing public.admin_call_queue_ticket(p_ticket_id) schema-cache error and the notification tables, run the complete admin_call_rpc_and_notifications.sql file in Supabase SQL Editor. Do not run a selected fragment.

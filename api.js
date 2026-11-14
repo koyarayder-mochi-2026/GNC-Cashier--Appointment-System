@@ -155,6 +155,60 @@ export const api = {
       p_new_status: newStatus,
       p_staff_note: staffNote
     }));
+  },
+
+  async getNotificationPreferences(userId) {
+    const client = requireClient();
+    const result = await client.from('queue_notification_preferences')
+      .select('user_id,email_enabled,device_enabled').eq('user_id', userId).maybeSingle();
+    return unwrap(result) || { user_id: userId, email_enabled: false, device_enabled: false };
+  },
+
+  async setEmailNotifications(userId, enabled) {
+    const client = requireClient();
+    return unwrap(await client.from('queue_notification_preferences').upsert({
+      user_id: userId,
+      email_enabled: Boolean(enabled)
+    }, { onConflict: 'user_id' }).select('user_id,email_enabled,device_enabled').single());
+  },
+
+  async setDeviceNotifications(userId, enabled) {
+    const client = requireClient();
+    return unwrap(await client.from('queue_notification_preferences').upsert({
+      user_id: userId,
+      device_enabled: Boolean(enabled)
+    }, { onConflict: 'user_id' }).select('user_id,email_enabled,device_enabled').single());
+  },
+
+  async savePushSubscription(userId, subscription) {
+    const client = requireClient();
+    const serialized = subscription?.toJSON ? subscription.toJSON() : subscription;
+    if (!serialized?.endpoint || !serialized?.keys?.p256dh || !serialized?.keys?.auth) {
+      throw new Error('The browser did not provide a valid push subscription.');
+    }
+    return unwrap(await client.from('queue_push_subscriptions').upsert({
+      user_id: userId,
+      endpoint: serialized.endpoint,
+      p256dh: serialized.keys.p256dh,
+      auth: serialized.keys.auth,
+      user_agent: navigator.userAgent,
+      is_active: true
+    }, { onConflict: 'endpoint' }).select('id').single());
+  },
+
+  async removeAllPushSubscriptions(userId) {
+    const client = requireClient();
+    return unwrap(await client.from('queue_push_subscriptions').delete().eq('user_id', userId));
+  },
+
+  async notifyStudentTurn(ticketId) {
+    const client = requireClient();
+    if (!ticketId) throw new Error('The called ticket ID is missing.');
+    const result = await client.functions.invoke('notify-student-turn', {
+      body: { ticket_id: ticketId }
+    });
+    if (result.error) throw result.error;
+    return result.data || {};
   }
 };
 

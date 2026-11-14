@@ -365,3 +365,22 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .app-paused-banner{margin:0 0 24px}
 .footer-admin-link{color:#f1d36c;text-decoration:underline;text-underline-offset:3px;margin-left:5px}
 @media(max-width:600px){.paused-access-panel{display:block;margin:26px auto;padding:22px}.paused-icon{margin-bottom:18px}.system-status-banner{margin-top:18px}}
+
+
+/* Student queue-call notification preferences. */
+.notification-preferences{margin-top:22px;padding:24px;display:grid;grid-template-columns:minmax(220px,.8fr) minmax(300px,1.2fr);gap:25px;align-items:start;border:1px solid var(--line,#e9e3d4)}
+.notification-preferences-copy h4{margin:4px 0 8px;color:#10452f;font:700 20px/1.25 'Playfair Display',serif}
+.notification-preferences-copy p:not(.eyebrow){margin:0;color:#607267;font-size:12px;line-height:1.7}
+.notification-options{display:grid;gap:12px}
+.notification-email-option,.notification-device-option{display:flex;gap:14px;align-items:center;justify-content:space-between;padding:13px 14px;border:1px solid #e9e3d4;border-radius:10px;background:#fffdf8}
+.notification-check{display:flex;align-items:center;gap:10px;cursor:pointer;min-width:0}
+.notification-check input{accent-color:#14583c;width:17px;height:17px;flex:none}
+.notification-check span,.notification-device-option>div{display:grid;gap:4px}
+.notification-check strong,.notification-device-option strong{font-size:12px;color:#173f2d}
+.notification-check small,.notification-device-option small{font-size:10px;color:#748276;line-height:1.5;overflow-wrap:anywhere}
+.notification-options .button{white-space:nowrap;font-size:10px;padding:10px 13px}
+.notification-settings-message{min-height:15px;margin:0;color:#176044;font-size:11px;line-height:1.5}
+.notification-settings-message.error{color:#a52e37}
+.notification-settings-message:empty{display:none}
+@media(max-width:760px){.notification-preferences{grid-template-columns:1fr;gap:17px}}
+@media(max-width:520px){.notification-email-option,.notification-device-option{align-items:flex-start;flex-direction:column}.notification-options .button{width:100%}}
