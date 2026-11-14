@@ -68,7 +68,7 @@ Content-Type: application/json
 }
 ```
 
-Set `p_cashier_window_id` to a cashier UUID to select a specific counter, or `null` to automatically assign the shorter active line. Returns `ticket_id`, `ticket_code`, assigned counter, and date.
+Set `p_cashier_window_id` to a cashier UUID to select a specific counter, or `null` to automatically assign the shorter active line. The SQL RPC returns `result_ticket_id`, `result_ticket_code`, `result_cashier_window_id`, `result_cashier_window_name`, and `result_queue_date`; `api.js` maps these to the UI fields `ticket_id`, `ticket_code`, `cashier_window_id`, `cashier_window_name`, and `queue_date`.
 
 ### Get position in line
 
@@ -162,3 +162,8 @@ Supabase returns standard PostgREST JSON error bodies with fields such as `code`
 ## Note on deployment
 
 These endpoints become live only after `supabase_setup.sql` is run in the target Supabase project and the frontend `config.js` is populated with that project's URL and publishable key. This repository contains the implementation, but does not have access to deploy into or validate against the school's Supabase account.
+
+
+### RPC ambiguity fix (2026-11-14)
+
+The ticket creation RPC returns `result_cashier_window_id` and `result_queue_date` rather than output names that duplicate table columns. This avoids PL/pgSQL output-variable collisions in the atomic queue-counter upsert. The public queue summary RPC is implemented in SQL language and returns `cashier_window_id` safely. For an already deployed project, run `fix_queue_rpc_ambiguity.sql` once in Supabase SQL Editor.

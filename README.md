@@ -33,16 +33,11 @@ The script can run on a new project and includes compatibility steps for the ear
 
 ## 2. Configure the frontend
 
-Edit `config.js`:
+The `config.js` file in this package has already been populated with the Supabase project URL and publishable key supplied for this GNC deployment. Do not replace these values unless you are switching to a different Supabase project.
 
-```js
-window.GNC_SUPABASE_CONFIG = {
-  url: 'https://YOUR-PROJECT-REF.supabase.co',
-  anonKey: 'YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY'
-};
-```
+The publishable key is designed to be used in browser code. It does not bypass Row Level Security. Never put a Supabase `service_role` or secret key in `config.js`, any frontend file, a public Git repository, or a client-side API request.
 
-Only the public **publishable/anon** key belongs in the browser. Never place a `service_role` or secret key in `config.js`, any frontend file, a public Git repository, or a client-side API request.
+This is a plain HTML/CSS/JavaScript project, not a Next.js app. Therefore, `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are represented by `url` and `anonKey` in `config.js`; a static host will not automatically inject Next.js environment variables into these files.
 
 ## 3. Run locally
 
@@ -161,3 +156,15 @@ python -m http.server 5500
 ```
 
 Then open `http://localhost:5500`. VS Code Live Server also works.
+
+
+## Database patch for ambiguous RPC column names
+
+For an existing Supabase project that reports `column reference "queue_date" is ambiguous` or `column reference "cashier_window_id" is ambiguous`, run `fix_queue_rpc_ambiguity.sql` once in SQL Editor. The patch replaces only the `take_queue_number` and `get_public_queue_status` functions; it does not truncate tables or remove ticket data. The SQL RPC now returns uniquely prefixed `result_*` fields to avoid all output-variable/table-column collisions. `api.js` maps those fields back to the UI contract, so the student-facing page does not need changes.
+
+**Important:** Run the complete `fix_queue_rpc_ambiguity.sql` file from beginning to end. Do not paste only part of the `CREATE FUNCTION` body. If Supabase reports `unterminated dollar-quoted string`, the submitted query was cut off before the matching dollar-quote terminator.
+
+### Official GNC crest
+
+The website uses the supplied Guagua National Colleges seal at `assets/gnc-official-crest.png`. The white background has been removed and saved as a transparent PNG. The same crest is displayed in the student portal header, public queue display header, and student portal footer.
+

@@ -1,0 +1,5 @@
+The included fix_queue_rpc_ambiguity.sql is the complete replacement patch.
+Copy the ENTIRE file into Supabase SQL Editor and run it in one execution.
+It replaces take_queue_number with collision-proof result_* output names,
+recreates get_public_queue_status as a SQL function, restores RPC grants,
+and requests a PostgREST schema reload.

@@ -82,12 +82,21 @@ export const api = {
 
   async takeQueueNumber({ serviceId, cashierWindowId = null, studentNote = null }) {
     const client = requireClient();
-    const result = unwrap(await client.rpc('take_queue_number', {
+    const response = unwrap(await client.rpc('take_queue_number', {
       p_service_id: serviceId,
       p_cashier_window_id: cashierWindowId || null,
       p_student_note: studentNote || null
     }));
-    return Array.isArray(result) ? result[0] : result;
+    const row = Array.isArray(response) ? response[0] : response;
+    if (!row) return row;
+    // Keep the UI contract stable while the SQL uses collision-proof result_* names.
+    return {
+      ticket_id: row.result_ticket_id,
+      ticket_code: row.result_ticket_code,
+      cashier_window_id: row.result_cashier_window_id,
+      cashier_window_name: row.result_cashier_window_name,
+      queue_date: row.result_queue_date
+    };
   },
 
   async cancelMyTicket(ticketId) {
