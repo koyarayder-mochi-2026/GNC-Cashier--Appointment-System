@@ -133,7 +133,7 @@ export const api = {
   async getStaffQueue(cashierWindowId, manilaDate) {
     const client = requireClient();
     return unwrap(await client.from('queue_tickets')
-      .select('id,ticket_code,status,created_at,student_note,profiles(full_name,student_number),services(name)')
+      .select('id,ticket_code,status,created_at,student_note,profiles!queue_tickets_student_id_fkey(full_name,student_number),services(name)')
       .eq('cashier_window_id', cashierWindowId).eq('queue_date', manilaDate)
       .in('status', ['waiting', 'serving']).order('created_at', { ascending: true })) || [];
   },
