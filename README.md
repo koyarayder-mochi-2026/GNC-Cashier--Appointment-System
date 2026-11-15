@@ -375,3 +375,8 @@ The supplied 2048x2048 Rizal statue photograph is background-removed and saved a
 - Deploy the ZIP contents at the root of the Vercel project.
 
 Note: the statue uses the supplied photo as a camera-facing 3D scene sprite rather than a sculpted polygon mesh. This preserves the recognizable photographic likeness, but it is not a fully sculpted 360-degree statue model.
+
+
+## Limlingan pedestrian bridge correction
+
+The 3D campus model includes two covered pedestrian spans matching the blue corridor locations in the supplied campus plan: a central covered bridge between Tanjangco and Goseco leading toward Limlingan, and a Limlingan-to-Beta side bridge. See `LIMLINGAN_BRIDGE_FIX_NOTES.md`. No Supabase migration is required.
