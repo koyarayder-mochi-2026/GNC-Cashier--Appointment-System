@@ -312,3 +312,23 @@ The Edge Function checks the authenticated caller's database role (`admin` or `c
 Both admin-panel call actions and the cashier desk's **Call next** action invoke `notify-student-turn` after the database successfully changes the ticket to `serving`. Queue operation success is not rolled back when a delivery provider is unavailable: the cashier still calls the number, and the admin/cashier interface reports that notification delivery needs configuration. The browser service worker displays push notifications and opens the My Queue page when clicked.
 
 The project source can be statically checked in this workspace, but live database execution, push delivery, and email delivery must be tested after applying the SQL migration and configuring the Supabase Edge Function/provider secrets.
+
+
+## Interactive campus map
+
+The public home page now includes an interactive campus directory based on the reference image supplied by the school project owner. Students can select Beta Building, Banzali Hall, Tanjangco Hall, Goseco Hall, Puno Hall, Limlingan Hall, Narciso Hall, Parking 1, Parking 2, or the Main Gate from the directory or map markers. Zoom controls and a reset control are included. The room guide preserves the supplied floor convention: 100 = 1st floor, 200 = 2nd floor, 300 = 3rd floor, and 400 = 4th floor.
+
+**Map accuracy note:** the supplied reference is a rendered campus illustration, not a georeferenced or surveyed plan. The highlighted paths are illustrative visual guides only; confirm exact pedestrian access and room locations with campus staff before relying on them for wayfinding.
+
+
+## Interactive 3D campus map
+
+The home page campus directory now uses `campus-map-3d.js`, built with Three.js and OrbitControls (loaded from jsDelivr). It uses the supplied `assets/gnc-campus-map-reference.jpg` as the site-plan base, adds raised building masses and destination labels, and animates a red-and-white route from the Main Gate when a destination is selected.
+
+- Drag to orbit the campus; scroll/pinch to zoom.
+- Use the destination directory or select a 3D map label.
+- Use + / − to zoom, ↺ to reset, and the home icon to focus on the Main Gate.
+- The map needs an internet connection to load the Three.js modules from jsDelivr.
+- Building heights and route paths are illustrative approximations based on the provided reference plan, not surveyed architectural or pedestrian data.
+
+No Supabase schema, authentication, queue, admin, or notification code was changed for this map upgrade.

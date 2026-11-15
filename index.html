@@ -49,6 +49,7 @@
       <nav class="main-nav" aria-label="Main navigation">
         <a class="main-nav-link active" href="#home">Home</a>
         <a class="main-nav-link" href="#how-it-works">About</a>
+        <a class="main-nav-link" href="#campus-directory">Campus map</a>
         <a id="navStudentAccess" class="main-nav-link" href="#authPanel">Student Access</a>
         <a class="main-nav-link" href="display.html" target="_blank" rel="noopener noreferrer">Live Queue</a>
       </nav>
@@ -174,12 +175,34 @@
       </section>
     </section>
 
+
+    <section id="campus-directory" class="campus-directory-section campus-3d-section" aria-labelledby="campusMapTitle">
+      <div class="campus-map-heading">
+        <div><p class="eyebrow">EXPLORE GNCI</p><h2 id="campusMapTitle">Campus directory</h2><p>Explore the campus in 3D. Select a destination to see its location and an animated walking route from the Main Gate.</p></div>
+        <span class="campus-map-note">INTERACTIVE 3D CAMPUS GUIDE</span>
+      </div>
+      <div class="campus-map-layout">
+        <aside class="campus-directory-panel" aria-label="Campus destinations">
+          <p class="campus-side-kicker">DESTINATIONS</p>
+          <div id="campusDestinationList" class="campus-destination-list"></div>
+          <div class="campus-floor-guide"><p class="campus-side-kicker">ROOM NUMBERS</p><div><b>100</b><span>1st Floor</span></div><div><b>200</b><span>2nd Floor</span></div><div><b>300</b><span>3rd Floor</span></div><div><b>400</b><span>4th Floor</span></div><small>Use the first digit of the room number to identify its floor.</small></div>
+        </aside>
+        <div class="campus-map-main">
+          <div class="campus-map-toolbar"><div><strong>Campus map</strong><small id="campusMapHint">Drag to orbit · scroll to zoom · select a building to navigate</small></div><div class="campus-map-controls"><button type="button" id="campusZoomIn" aria-label="Zoom in">＋</button><button type="button" id="campusZoomOut" aria-label="Zoom out">－</button><button type="button" id="campusMapReset" aria-label="Reset map view">↺</button><button type="button" id="campusMapHome" aria-label="Return to main gate">⌂</button></div></div>
+          <div class="campus-map-viewport campus-3d-viewport" id="campusMapViewport"><div id="campus3dLoading" class="campus-3d-loading">Preparing 3D campus…</div><canvas id="campus3dCanvas" aria-label="Interactive three-dimensional Guagua National Colleges campus map"></canvas><div class="campus-3d-hint">DRAG TO ROTATE <span>·</span> SCROLL TO ZOOM</div></div>
+          <div class="campus-map-footer" aria-live="polite"><div><span class="campus-map-footer-kicker">WALKING DIRECTIONS</span><strong id="campusSelectedName">Start at the Main Gate</strong><p id="campusRouteDescription">Select a building from the directory or tap its label in the 3D map.</p></div><button type="button" id="campusClearSelection" class="campus-clear-button" hidden>Clear route</button></div>
+        </div>
+      </div>
+      <p class="campus-map-disclaimer">3D building heights and walking routes are visual approximations based on the supplied campus reference. Confirm actual pedestrian access and room locations on campus.</p>
+    </section>
+
     <section id="how-it-works" class="how-it-works"><div class="how-heading"><p class="eyebrow">SIMPLE AND CONVENIENT</p><h2>Three steps. No long line.</h2></div><div class="how-grid"><article><span>01</span><h4>Get a number online</h4><p>Sign in, choose your transaction, and receive a ticket for Cashier 1 or 2.</p></article><article><span>02</span><h4>Monitor your place</h4><p>Check the live queue board and your position while you wait elsewhere.</p></article><article><span>03</span><h4>Proceed when called</h4><p>Go to the assigned cashier when your number is being served. Complete payment in person.</p></article></div></section>
   </main>
 
   <footer class="site-footer"><div class="footer-brand"><img class="footer-crest" src="assets/gnc-official-crest.png" alt="" width="42" height="42"><strong>GNC</strong><span>Student Cashier Queue</span></div><p>Guagua National Colleges, Inc. · Online queue concept</p><small>For school demonstration and testing. Confirm official cashier procedures before deployment. <a href="admin/" class="footer-admin-link">Administrator access</a></small></footer>
   <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
+  <script type="module" src="campus-map-3d.js"></script>
   <script src="config.js"></script>
   <script type="module" src="app.js"></script>
 </body>
