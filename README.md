@@ -339,3 +339,11 @@ The 3D map includes an import map for Three.js and OrbitControls. OrbitControls 
 
 
 The route waypoint sets are maintained in the `routes` object in `campus-map-3d.js`. Each route begins at the Main Gate and ends at the approach edge of its selected destination; animated white dash markers move along a red ground-level path. Because the supplied plan is an illustration rather than a measured GIS/site survey, have school staff confirm the real pedestrian corridors before publishing as official directions.
+
+## Campus map — final 2D / 3D controls
+
+The campus directory now opens in **2D** by default so the supplied campus artwork and route guide remain available even on devices without WebGL. Visitors can switch to **3D** using the view toggle in the map toolbar. Three.js and OrbitControls are loaded only after the visitor selects 3D; if the CDN, WebGL, or GPU is unavailable, the 2D map remains usable.
+
+Both modes use the same original `assets/gnc-campus-map-reference.jpg` artwork and the same nine orthogonal route definitions in `campus-map-3d.js`. Routes use straight horizontal/vertical walkway legs (not Catmull-Rom curves), a red path with a white border, and moving white direction dashes. The 3D view places the original illustration on a beveled map board; it deliberately does not replace school buildings with invented 3D blocks, because retaining the source roof shapes, school flag, parking markings, labels, and building details is more accurate to the supplied campus reference.
+
+The destinations are Beta Building, Banzali Hall, Tanjangco Hall, Goseco Hall, Puno Hall, Limlingan Hall, Narciso Hall, Parking 1, and Parking 2. The Main Gate is the common route origin. Routes are visual interpretations of the user-supplied reference routes and are not surveyed accessibility or safety directions; GNCI should confirm pedestrian access before relying on them for wayfinding.
