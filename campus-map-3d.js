@@ -322,6 +322,83 @@ let OrbitControls = null;
     beams.forEach(([bw,bh,bd,x,y,z])=>{const m=new THREE.Mesh(new THREE.BoxGeometry(bw,bh,bd),border);m.position.copy(world(x,z,y));m.castShadow=true;scene.add(m);});
     b._roofTop=baseY+3.8;
   }
+
+  function addGymLine(points, y, material, radius=.42){
+    for(let i=0;i<points.length-1;i++){
+      const a=world(points[i][0],points[i][1],y), b=world(points[i+1][0],points[i+1][1],y);
+      const delta=b.clone().sub(a), length=delta.length();
+      if(length<.05) continue;
+      const mesh=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,length,8),material);
+      mesh.position.copy(a).add(b).multiplyScalar(.5);
+      mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.clone().normalize());
+      mesh.castShadow=false;mesh.receiveShadow=true;scene.add(mesh);
+    }
+  }
+  function addBasketballGym(building){
+    // Beta is an open-sided basketball gym below the Philippine-flag canopy,
+    // not a sealed classroom block. Court lines and baskets are visible through the roof supports.
+    const [x1,z1,x2,z2]=building.rect, w=x2-x1, d=z2-z1, cx=(x1+x2)/2, cz=(z1+z2)/2;
+    const floorTop=3.15;
+    const slabMat=new THREE.MeshStandardMaterial({color:0xa94331,roughness:.88});
+    const blueMat=new THREE.MeshStandardMaterial({color:0x174a78,roughness:.78});
+    const greenMat=new THREE.MeshStandardMaterial({color:0x145b3c,roughness:.78});
+    const trimMat=new THREE.MeshStandardMaterial({color:0xe7dfcc,roughness:.78});
+    const lineMat=new THREE.MeshStandardMaterial({color:0xf4f0df,roughness:.72});
+    const goldMat=new THREE.MeshStandardMaterial({color:0xd7ad45,roughness:.55,metalness:.08});
+    const orangeMat=new THREE.MeshStandardMaterial({color:0xd97832,roughness:.55});
+    const darkMat=new THREE.MeshStandardMaterial({color:0x223b45,roughness:.7});
+    // Red gym apron and a recessed blue playing court.
+    const apron=new THREE.Mesh(new THREE.BoxGeometry(w-5,1.5,d-9),slabMat);
+    apron.position.copy(world(cx,cz,floorTop-.8));apron.receiveShadow=true;apron.castShadow=true;scene.add(apron);
+    const courtW=w-19, courtD=d-35, courtX1=cx-courtW/2, courtX2=cx+courtW/2;
+    const courtZ1=cz-courtD/2, courtZ2=cz+courtD/2;
+    const court=new THREE.Mesh(new THREE.BoxGeometry(courtW,.45,courtD),blueMat);
+    court.position.copy(world(cx,cz,floorTop+.12));court.receiveShadow=true;scene.add(court);
+    const y=floorTop+.48;
+    // White regulation boundary, centre line, key boxes and centre circle.
+    addGymLine([[courtX1,courtZ1],[courtX2,courtZ1],[courtX2,courtZ2],[courtX1,courtZ2],[courtX1,courtZ1]],y,lineMat,.48);
+    addGymLine([[cx,courtZ1],[cx,courtZ2]],y,lineMat,.38);
+    const centreRing=new THREE.Mesh(new THREE.TorusGeometry(8,.42,8,56),lineMat);
+    centreRing.rotation.x=Math.PI/2;centreRing.position.copy(world(cx,cz,y+.08));scene.add(centreRing);
+    const keyW=21, keyD=27;
+    [[courtZ1,courtZ1+keyD],[courtZ2-keyD,courtZ2]].forEach(([za,zb])=>{
+      addGymLine([[cx-keyW/2,za],[cx+keyW/2,za],[cx+keyW/2,zb],[cx-keyW/2,zb],[cx-keyW/2,za]],y,lineMat,.42);
+      const freeRing=new THREE.Mesh(new THREE.TorusGeometry(7,.38,8,44,Math.PI),lineMat);
+      freeRing.rotation.set(Math.PI/2,0,za===courtZ1?0:Math.PI);
+      freeRing.position.copy(world(cx,za===courtZ1?za+keyD:zb-keyD,y+.06));scene.add(freeRing);
+    });
+    // Gold-painted centre and end markings echo the court shown in the GNC reference.
+    addGymLine([[cx-2,cz],[cx+2,cz]],y+.04,goldMat,.55);
+    // Basket supports, backboards and orange rims at both ends of the court.
+    [courtZ1+8,courtZ2-8].forEach((basketZ,index)=>{
+      const support=new THREE.Mesh(new THREE.BoxGeometry(1.25,8,1.25),darkMat);
+      support.position.copy(world(cx,basketZ+ (index===0?-3:3),floorTop+4.3));support.castShadow=true;scene.add(support);
+      const board=new THREE.Mesh(new THREE.BoxGeometry(12,7,.75),trimMat);
+      board.position.copy(world(cx,basketZ,floorTop+14));board.castShadow=true;scene.add(board);
+      const inner=new THREE.Mesh(new THREE.BoxGeometry(5.8,3.8,.25),new THREE.MeshStandardMaterial({color:0x9fc0cf,roughness:.35,metalness:.05}));
+      inner.position.copy(world(cx,basketZ+(index===0?-.48:.48),floorTop+14));scene.add(inner);
+      const rim=new THREE.Mesh(new THREE.TorusGeometry(2.5,.48,8,32),orangeMat);
+      rim.rotation.x=Math.PI/2;rim.position.copy(world(cx,basketZ+(index===0?3.1:-3.1),floorTop+10.5));rim.castShadow=true;scene.add(rim);
+    });
+    // Open-sided green frame: corner and mid-span columns carry the flag canopy while keeping the court visible.
+    const postPositions=[
+      [x1+3,z1+4],[x2-3,z1+4],[x1+3,cz],[x2-3,cz],[x1+3,z2-4],[x2-3,z2-4]
+    ];
+    postPositions.forEach(([x,z])=>{
+      const plinth=new THREE.Mesh(new THREE.BoxGeometry(4.2,1.5,4.2),trimMat);
+      plinth.position.copy(world(x,z,3.9));plinth.castShadow=true;scene.add(plinth);
+      const post=new THREE.Mesh(new THREE.BoxGeometry(2.6,building.h+1,2.6),greenMat);
+      post.position.copy(world(x,z,(building.h+1)/2+4));post.castShadow=true;post.receiveShadow=true;scene.add(post);
+    });
+    // Low green side rails and fascia; the front and rear remain open for the gym entrance.
+    [x1+1.2,x2-1.2].forEach(x=>{
+      const rail=new THREE.Mesh(new THREE.BoxGeometry(1.8,5,d-10),greenMat);
+      rail.position.copy(world(x,cz,6.8));rail.castShadow=true;scene.add(rail);
+    });
+    const fascia=new THREE.Mesh(new THREE.BoxGeometry(w-3,2.1,2.2),greenMat);
+    fascia.position.copy(world(cx,z1+2.2,building.h+0.1));fascia.castShadow=true;scene.add(fascia);
+  }
+
   function addBuilding(image,b){
     const [x1,z1,x2,z2]=b.rect,w=x2-x1,d=z2-z1,center=world((x1+x2)/2,(z1+z2)/2,0);
     const wallMat=new THREE.MeshStandardMaterial({color:b.wall,roughness:.78,metalness:.02});
@@ -336,12 +413,14 @@ let OrbitControls = null;
       });
       const lintel=new THREE.Mesh(new THREE.BoxGeometry(w-4,2.2,4.2),new THREE.MeshStandardMaterial({color:0xb8954c,roughness:.6,metalness:.12}));
       lintel.position.copy(world((x1+x2)/2,z1+4,b.h-1.6));lintel.castShadow=true;scene.add(lintel);
+    }else if(b.flag){
+      // Beta's Philippine-flag roof covers an open basketball gym; do not fill it with a solid block.
+      addBasketballGym(b);
     }else{
       const body=new THREE.Mesh(new THREE.BoxGeometry(w,b.h,d),[sideLight,sideDark,wallMat,sideDark,wallMat,sideDark]);
       body.position.set(center.x,b.h/2,center.z);body.castShadow=true;body.receiveShadow=true;scene.add(body);
     }
-    addFacadeDetails(b);
-    addWindows(b);
+    if(!b.flag){addFacadeDetails(b);addWindows(b);}
     if(b.flag) addFlagCanopy(image,b);
     else if(b.roofStyle==='hip') addHippedRoof(image,b);
     else {
@@ -386,20 +465,43 @@ let OrbitControls = null;
     canopy.position.set(gx,21.7,front-.8);canopy.castShadow=true;scene.add(canopy);
   }
 
+  function addRizalStatue(){
+    const loader=new THREE.TextureLoader();
+    loader.load('assets/rizal-statue-cutout.png',texture=>{
+      texture.colorSpace=THREE.SRGBColorSpace;
+      texture.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),12);
+      texture.minFilter=THREE.LinearMipmapLinearFilter;texture.magFilter=THREE.LinearFilter;
+      const shadow=new THREE.Mesh(
+        new THREE.CircleGeometry(7.2,40),
+        new THREE.MeshBasicMaterial({color:0x3c453e,transparent:true,opacity:.19,depthWrite:false})
+      );
+      shadow.rotation.x=-Math.PI/2;shadow.position.copy(world(274,232,3.53));scene.add(shadow);
+      // Camera-facing transparent sculpture cutout retains the real Rizal statue details supplied by GNC.
+      const statue=new THREE.Sprite(new THREE.SpriteMaterial({
+        map:texture,color:0xffffff,transparent:true,alphaTest:.025,depthTest:true,depthWrite:false
+      }));
+      const statueHeight=29,statueWidth=statueHeight*(623/1741);
+      statue.center.set(.5,0);
+      statue.scale.set(statueWidth,statueHeight,1);
+      statue.position.copy(world(274,232,3.55));
+      statue.renderOrder=8;scene.add(statue);
+      const plaque=new THREE.Sprite(new THREE.SpriteMaterial({
+        map:labelTexture('RIZAL MONUMENT','#17603e'),transparent:true,depthTest:true,depthWrite:false
+      }));
+      plaque.scale.set(39,7.8,1);
+      plaque.position.copy(world(274,232,37.2));
+      plaque.renderOrder=9;scene.add(plaque);
+    },undefined,error=>console.error('Rizal statue texture could not load',error));
+  }
   function addGosecoCourtDetails(){
-    // Goseco Hall is a U-shaped group around a low, open courtyard.
+    // The open Goseco courtyard is the Rizal monument court between Goseco and Beta.
     const floor=new THREE.Mesh(new THREE.BoxGeometry(80,1.8,57),
       new THREE.MeshStandardMaterial({color:0x9b9b93,roughness:.94}));
     floor.position.copy(world(275,232,2.0));floor.receiveShadow=true;scene.add(floor);
     const inset=new THREE.Mesh(new THREE.BoxGeometry(20,.7,15),
       new THREE.MeshStandardMaterial({color:0x777970,roughness:.9}));
-    inset.position.copy(world(274,232,3.25));inset.receiveShadow=true;scene.add(inset);
-    const base=new THREE.Mesh(new THREE.BoxGeometry(10,3,8),
-      new THREE.MeshStandardMaterial({color:0x66665f,roughness:.85}));
-    base.position.copy(world(274,232,5.1));base.castShadow=true;scene.add(base);
-    const post=new THREE.Mesh(new THREE.CylinderGeometry(.9,.9,11,12),
-      new THREE.MeshStandardMaterial({color:0x64655f,metalness:.25,roughness:.52}));
-    post.position.copy(world(274,232,12));post.castShadow=true;scene.add(post);
+    inset.position.copy(world(274,232,3.15));inset.receiveShadow=true;scene.add(inset);
+    addRizalStatue();
   }
   function makeGroundTexture(image){
     const c=document.createElement('canvas');c.width=image.naturalWidth;c.height=image.naturalHeight;

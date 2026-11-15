@@ -344,3 +344,34 @@ The 2D and 3D modes keep separate waypoint sets so the lines can fit each view's
 The source plan is an illustration, not a surveyed architectural drawing or GIS map. Building heights, facade details, camera paths, and pedestrian routes are modeled interpretations of the supplied video and route examples. GNCI should verify building footprints, entrances, pedestrian access, and room locations before treating the map as official wayfinding or safety guidance.
 
 The 3D map requires WebGL and an internet connection to load Three.js r161 and OrbitControls from jsDelivr. The 2D mode does not depend on Three.js. No Supabase database migration is required for this campus-map update; existing authentication, cashier queue, admin controls, and notification code remain separate and unchanged.
+
+
+## Beta Basketball Gym and Rizal Monument update
+
+The Beta Building is modeled as an open-sided basketball gym beneath the Philippine-flag canopy. The gym includes a red perimeter apron, blue playing surface, court boundary and centre markings, free-throw areas, basketball backboards/rims, green support columns, and an open entrance. The Goseco courtyard now includes a cutout of the supplied Rizal statue image with a monument label and floor shadow, positioned in the open space between Goseco Hall and Beta Building.
+
+The supplied 2048x2048 Rizal statue photograph is background-removed and saved as `assets/rizal-statue-cutout.png`. No database migration is required.
+
+
+## November 15 update — Beta Gym and Rizal Monument
+
+### Beta Building
+- Replaced the former solid Beta building mass with an open-sided basketball gym beneath the Philippine-flag canopy.
+- Added a red gym apron and inset blue playing court.
+- Added straight court boundary lines, centre line and centre circle, free-throw boxes and arcs, two backboards, and two basket rims.
+- Added six green structural supports so the flag canopy reads as a roof over the gym rather than a flag painted on a solid classroom block.
+- Preserved the original Beta roof/flag texture from the supplied campus plan.
+
+### Rizal Monument
+- Added the supplied Rizal statue photograph as a transparent cutout sprite with camera-facing orientation, so its likeness remains visible while users orbit the 3D campus.
+- Positioned the monument in the center of the open Goseco courtyard between Goseco Hall and Beta Building.
+- Added a soft ground shadow and a `RIZAL MONUMENT` plaque.
+- The statue asset is `assets/rizal-statue-cutout.png`.
+
+### Compatibility and deployment
+- No Supabase schema change is required.
+- No cashier, administrator, authentication, notification, or queue API code was changed.
+- The source 2D campus artwork and both 2D/3D route point arrays are preserved.
+- Deploy the ZIP contents at the root of the Vercel project.
+
+Note: the statue uses the supplied photo as a camera-facing 3D scene sprite rather than a sculpted polygon mesh. This preserves the recognizable photographic likeness, but it is not a fully sculpted 360-degree statue model.
