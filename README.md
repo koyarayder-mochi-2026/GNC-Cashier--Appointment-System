@@ -316,34 +316,31 @@ The project source can be statically checked in this workspace, but live databas
 
 ## Interactive campus map
 
-The public home page now includes an interactive campus directory based on the reference image supplied by the school project owner. Students can select Beta Building, Banzali Hall, Tanjangco Hall, Goseco Hall, Puno Hall, Limlingan Hall, Narciso Hall, Parking 1, Parking 2, or the Main Gate from the directory or map markers. Zoom controls and a reset control are included. The room guide preserves the supplied floor convention: 100 = 1st floor, 200 = 2nd floor, 300 = 3rd floor, and 400 = 4th floor.
+The public home page now includes an interactive campus directory based on the reference image supplied by the school project owner. Students can select Beta Building, Banzali Hall, Tanjangco Hall, Goseco Hall, Puno Hall, Limlingan Hall, Narciso Hall, Parking 1, or Parking 2 from the directory or map markers. The Main Gate is the route origin and the home control returns the camera to it. Zoom controls and a reset control are included. The room guide preserves the supplied floor convention: 100 = 1st floor, 200 = 2nd floor, 300 = 3rd floor, and 400 = 4th floor.
 
 **Map accuracy note:** the supplied reference is a rendered campus illustration, not a georeferenced or surveyed plan. The highlighted paths are illustrative visual guides only; confirm exact pedestrian access and room locations with campus staff before relying on them for wayfinding.
 
 
-## Interactive 3D campus map
+## Interactive campus map — final 2D / 3D edition
 
-The home page campus directory uses `campus-map-3d.js`, built with Three.js and OrbitControls (loaded from jsDelivr). The supplied `assets/gnc-campus-map-reference.jpg` is rendered intact as the campus surface: the building shapes, original roof artwork, school flag, parking markings, shadows and printed labels are not covered by replacement 3D boxes. A perspective camera provides the 3D map view, with selectable transparent building hotspots, a selected-destination marker, and separate red routes with moving white dashes for all nine destinations.
+The campus directory opens in **2D** by default. Visitors can switch between **2D** and **3D** using the map toolbar. The 2D view remains available when WebGL is unavailable; Three.js and OrbitControls load only when the visitor chooses 3D. If the CDN or WebGL cannot initialize, the map reports the issue and returns to 2D rather than remaining stuck on a loading screen.
 
-- Drag to orbit the campus; scroll/pinch to zoom.
-- Use the destination directory or tap the corresponding building area on the map. The original image labels remain visible; transparent hotspot regions handle map selection.
-- Use + / − to zoom, ↺ to reset, and the home icon to focus on the Main Gate.
-- The map needs an internet connection to load the Three.js modules from jsDelivr.
-- Building heights and route paths are illustrative approximations based on the provided reference plan, not surveyed architectural or pedestrian data.
+### 2D image quality
 
-No Supabase schema, authentication, queue, admin, or notification code was changed for this map upgrade.
+The original supplied map artwork is 351 × 570 pixels. `assets/gnc-campus-map-reference-hd.png` is a 6× Lanczos enlargement (2106 × 3420) with restrained contrast, color, and sharpening adjustments. This improves interpolation and reduces visible pixel edges when zooming, but it cannot recreate fine details that were not present in the small original. The original JPG is retained in `assets/` as the untouched source.
 
+### 3D architectural model
 
-## 3D map loading fix
-The 3D map includes an import map for Three.js and OrbitControls. OrbitControls imports the bare module specifier `three`; without the import-map mapping, the browser cannot resolve that dependency and the map remains stuck on “Preparing 3D campus…”. The page now also displays a helpful error if the 3D module does not initialize within 12 seconds. Keep `index.html`, `campus-map-3d.js`, `styles.css`, and the `assets/` directory together at the site root when deploying.
+The 3D view is not a tilted screenshot. It builds separate extruded building meshes from the supplied campus plan and adds facade details: instanced multi-floor windows with frames and mullions, floor bands, corner pilasters, roof parapets, and cast shadows. Tanjangco, the upper Limlingan wing, Puno, Goseco wings, and Main Gate use sloped hip-roof meshes. Goseco is modeled as a U-shaped complex around an open courtyard. Beta uses a curved, flag-textured canopy; Parking 1 and Parking 2 have raised decks and painted parking-bay lines. Main Gate is an open, column-supported portico so the route can pass through the entrance instead of floating above a solid roof.
 
+The camera starts in a full-campus isometric view. Selecting a destination animates the camera toward that building; zoom, orbit, pan, reset, and return-to-gate controls are available. Destination labels and transparent hit areas support both directory selection and direct map selection.
 
-The route waypoint sets are maintained in the `routes` object in `campus-map-3d.js`. Each route begins at the Main Gate and ends at the approach edge of its selected destination; animated white dash markers move along a red ground-level path. Because the supplied plan is an illustration rather than a measured GIS/site survey, have school staff confirm the real pedestrian corridors before publishing as official directions.
+### Walking routes
 
-## Campus map — final 2D / 3D controls
+The 2D and 3D modes keep separate waypoint sets so the lines can fit each view's visible walkways. All nine routes are orthogonal, with no spline curves or diagonal shortcuts. The 3D path is a thin red center line with a white edge and moving white direction markers, placed close to the ground plane. The Main Gate is the common origin; destinations are Beta Building, Banzali Hall, Tanjangco Hall, Goseco Hall, Puno Hall, Limlingan Hall, Narciso Hall, Parking 1, and Parking 2.
 
-The campus directory now opens in **2D** by default so the supplied campus artwork and route guide remain available even on devices without WebGL. Visitors can switch to **3D** using the view toggle in the map toolbar. Three.js and OrbitControls are loaded only after the visitor selects 3D; if the CDN, WebGL, or GPU is unavailable, the 2D map remains usable.
+### Accuracy and technical notes
 
-Both modes use the same original `assets/gnc-campus-map-reference.jpg` artwork and the same nine orthogonal route definitions in `campus-map-3d.js`. Routes use straight horizontal/vertical walkway legs (not Catmull-Rom curves), a red path with a white border, and moving white direction dashes. The 3D view places the original illustration on a beveled map board; it deliberately does not replace school buildings with invented 3D blocks, because retaining the source roof shapes, school flag, parking markings, labels, and building details is more accurate to the supplied campus reference.
+The source plan is an illustration, not a surveyed architectural drawing or GIS map. Building heights, facade details, camera paths, and pedestrian routes are modeled interpretations of the supplied video and route examples. GNCI should verify building footprints, entrances, pedestrian access, and room locations before treating the map as official wayfinding or safety guidance.
 
-The destinations are Beta Building, Banzali Hall, Tanjangco Hall, Goseco Hall, Puno Hall, Limlingan Hall, Narciso Hall, Parking 1, and Parking 2. The Main Gate is the common route origin. Routes are visual interpretations of the user-supplied reference routes and are not surveyed accessibility or safety directions; GNCI should confirm pedestrian access before relying on them for wayfinding.
+The 3D map requires WebGL and an internet connection to load Three.js r161 and OrbitControls from jsDelivr. The 2D mode does not depend on Three.js. No Supabase database migration is required for this campus-map update; existing authentication, cashier queue, admin controls, and notification code remain separate and unchanged.
