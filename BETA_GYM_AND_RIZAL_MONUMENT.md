@@ -1,10 +1,11 @@
-# Beta Gym and Rizal Monument model update
+# Campus model correction — Beta Building and Limlingan Hall
 
-- Beta Building is an open-sided basketball gym under the Philippine-flag canopy.
-- Court colours: red perimeter apron and blue playing surface.
-- Court elements: white perimeter, centre line, centre circle, painted key boxes/arcs, two backboards and two orange rims.
-- Six green supports connect the open gym to the flag canopy.
-- The Goseco open courtyard contains the supplied Rizal statue cutout at map coordinate approximately (274, 232), placed on the courtyard inset, with a ground shadow and `RIZAL MONUMENT` plaque.
-- Statue artwork: `assets/rizal-statue-cutout.png` (623 × 1741 RGBA).
-- The statue is represented as a camera-facing sprite to preserve the supplied real statue likeness during orbit; it is not a full polygon sculpture.
-- The original 2D campus plan, destination controls, all route arrays, Supabase, authentication, queue, cashier, admin, and notification code are unchanged.
+## Corrections in this revision
+- Beta Building is modeled as an enclosed cashier building, not a gym. The model has a green multi-storey facade, repeated recessed glazing, three cashier service windows, a public entrance, a physical sign plaque, and a solid blue/red roof treatment.
+- Removed the basketball-court floor, hoops, open gym columns, and Philippine-flag canopy that had incorrectly replaced Beta Building.
+- Added an elevated covered pedestrian bridge alongside Limlingan Hall with a raised deck, translucent side panels, steel mullions, roof, support piers, and end landings.
+- Replaced the screenshot-cropped roof maps on the 3D buildings with solid PBR-style architectural materials and physical roof geometry. The 2D campus artwork remains unchanged.
+- Retained the Rizal monument in the open Goseco courtyard using the supplied statue cutout.
+
+## Notes
+The Beta roof uses separate solid blue and red geometry panels rather than a flat screenshot texture. The Rizal statue remains a camera-facing cutout, not a full 360-degree sculpted mesh.
