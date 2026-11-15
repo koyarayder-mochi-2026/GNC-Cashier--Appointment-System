@@ -288,8 +288,7 @@ let OrbitControls = null;
     const [x1,z1,x2,z2]=b.rect,w=x2-x1,d=z2-z1,cx=(x1+x2)/2,cz=(z1+z2)/2;
     const green=new THREE.MeshStandardMaterial({color:0x15583a,roughness:.82,metalness:.015});
     const greenDark=new THREE.MeshStandardMaterial({color:0x0d3d29,roughness:.86});
-    const red=new THREE.MeshStandardMaterial({color:0xb51e2b,roughness:.76});
-    const blue=new THREE.MeshStandardMaterial({color:0x064b9b,roughness:.76});
+    const roofGreen=new THREE.MeshStandardMaterial({color:0x1b6842,roughness:.78,metalness:.025});
     const cream=new THREE.MeshStandardMaterial({color:0xe7e0d0,roughness:.84});
     const trim=new THREE.MeshStandardMaterial({color:0xc9c0ab,roughness:.76});
     const darkGlass=new THREE.MeshStandardMaterial({color:0x173d50,roughness:.28,metalness:.16,emissive:0x07151c,emissiveIntensity:.1});
@@ -306,12 +305,14 @@ let OrbitControls = null;
       const y=b.h*floor/3;
       box(w+1.0,.72,d+1.0,cx,cz,y,trim,{castShadow:false});
     }
-    // Flat parapet cap with distinct red (north) and blue (south) roof fields.
+    // Beta is the enclosed cashier building: its entire rooftop is school green,
+    // not a Philippine-flag panel. The flag belongs only to the separate gym canopy.
     box(w+3,1.9,d+3,cx,cz,b.h+.5,cream);
-    const panelY=b.h+1.55, panelW=w-7, panelD=(d-12)/2;
-    box(panelW,.46,panelD,cx,z1+3+panelD/2,panelY,red);
-    box(panelW,.46,panelD,cx,z2-3-panelD/2,panelY,blue);
-    // Raised cream perimeter coping; the flat roof panels sit horizontally on the cap.
+    const panelY=b.h+1.55, panelW=w-7, panelD=d-9;
+    box(panelW,.58,panelD,cx,cz,panelY,roofGreen);
+    // A restrained darker-green center expansion joint and perimeter coping finish the roof.
+    box(.42,.16,panelD-1,cx,cz,panelY+.38,greenDark,{castShadow:false});
+    // Raised cream perimeter coping; the green roof panel sits horizontally on the cap.
     const copingY=panelY+.45;
     box(w+1,.8,1.6,cx,z1+1,copingY,cream);
     box(w+1,.8,1.6,cx,z2-1,copingY,cream);
@@ -382,7 +383,8 @@ let OrbitControls = null;
     // Low perimeter plinth, red apron and a blue court with crisp painted markings.
     box(w+2,2,d+2,cx,cz,1.1,materials.cream);
     box(w,1.0,d,cx,cz,2.45,materials.apron);
-    const courtX1=x1+4,courtX2=x2-4,courtZ1=z1+46,courtZ2=z2-5;
+    // Keep a wider west-side spectator strip for the stepped bench seating.
+    const courtX1=x1+12,courtX2=x2-4,courtZ1=z1+46,courtZ2=z2-5;
     const courtCx=(courtX1+courtX2)/2,courtCz=(courtZ1+courtZ2)/2,courtW=courtX2-courtX1,courtD=courtZ2-courtZ1;
     box(courtW,.65,courtD,courtCx,courtCz,3.25,materials.court);
     const paintY=3.66;
@@ -405,6 +407,46 @@ let OrbitControls = null;
       const ft=new THREE.Mesh(new THREE.TorusGeometry(7,.24,7,48),circleMat);
       ft.rotation.x=Math.PI/2;ft.position.copy(world(courtCx,kz+keyD,paintY+.1));scene.add(ft);
     });
+
+    // Three-tier spectator benches along the west sideline. These are solid stepped
+    // seating platforms with timber seat boards and backs, facing east toward the court.
+    // There is deliberately no flag decal or flag-shaped floor graphic on the court.
+    const benchConcrete=new THREE.MeshStandardMaterial({color:0xb8b5a8,roughness:.9});
+    const benchWood=new THREE.MeshStandardMaterial({color:0x6d513b,roughness:.78});
+    const benchEdge=new THREE.MeshStandardMaterial({color:0x174b36,roughness:.78});
+    const benchZ=(courtZ1+courtZ2)/2,benchLength=Math.min(78,courtZ2-courtZ1-16);
+    const benchRows=[
+      {x:x1+5.3,seatY:5.1},
+      {x:x1+7.25,seatY:7.5},
+      {x:x1+9.2,seatY:9.9}
+    ];
+    benchRows.forEach((row,index)=>{
+      const supportH=row.seatY-3.7;
+      box(1.8,supportH,benchLength,row.x,benchZ,3.7+supportH/2,benchConcrete);
+      box(1.95,.5,benchLength,row.x+.08,benchZ,row.seatY,benchWood);
+      // Individual slats make the seats read as spectator benches rather than a floor decal.
+      const slatCount=28,slatStep=benchLength/slatCount;
+      for(let i=0;i<slatCount;i++){
+        const zz=benchZ-benchLength/2+(i+.5)*slatStep;
+        box(1.84,.12,.22,row.x+.08,zz,row.seatY+.31,benchEdge,{castShadow:false});
+      }
+      // Continuous backrest, raised behind each seat; faces the basketball court.
+      box(.24,1.65,benchLength,row.x-.72,benchZ,row.seatY+1.05,benchWood);
+      box(.36,.25,benchLength,row.x-.72,benchZ,row.seatY+1.92,benchEdge,{castShadow:false});
+      // Short end cheeks anchor each tier and prevent the rows looking like floating planks.
+      for(const endZ of [benchZ-benchLength/2,benchZ+benchLength/2]){
+        box(1.95,Math.max(1.2,supportH),1.0,row.x,endZ,3.7+Math.max(1.2,supportH)/2,benchEdge);
+      }
+    });
+    // A compact three-step access stair enters the seating tiers from the south aisle.
+    const benchStepTrim=new THREE.MeshStandardMaterial({color:0xe0dacc,roughness:.82});
+    const accessZ=z2-12;
+    for(let step=0;step<3;step++){
+      const sx=x1+4.8+step*1.95,stepH=1.25+step*1.25;
+      box(1.65,stepH,6.5,sx,accessZ,3.7+stepH/2,benchConcrete);
+      box(1.72,.22,6.6,sx,accessZ,3.7+stepH+.11,benchStepTrim);
+    }
+
     // Raised school-event stage at the north end of the gym, beneath the flag canopy.
     // The platform, apron, steps, backdrop, curtains and lectern are separate solid meshes.
     const stageX=courtCx,stageZ=z1+21,stageW=34,stageD=25,stageTop=7.2;
@@ -469,23 +511,24 @@ let OrbitControls = null;
 
     // Procedurally draw a Philippine flag for the arched canopy. This is a generated
     // material on curved geometry, so the flag follows the roof curvature in 3D.
-    const flagCanvas=document.createElement('canvas');flagCanvas.width=1024;flagCanvas.height=1792;
+    // Flag canopy orientation follows the supplied reference: blue on the LEFT,
+    // red on the RIGHT, with the white triangle and sun/stars at the near/south end.
+    // Texture u runs west-to-east; texture v runs north-to-south along the canopy.
+    const flagCanvas=document.createElement('canvas');flagCanvas.width=1024;flagCanvas.height=3072;
     const ctx=flagCanvas.getContext('2d');
-    // Match the supplied reference exactly: red is the far/north half, blue is
-    // the near/south half, and the white hoist triangle occupies the right/east end.
-    // Texture UV v=0 maps to the north edge; keep CanvasTexture flipY explicit.
-    ctx.fillStyle='#c8102e';ctx.fillRect(0,0,1024,896);
-    ctx.fillStyle='#0038a8';ctx.fillRect(0,896,1024,896);
-    ctx.fillStyle='#fffdf4';ctx.beginPath();ctx.moveTo(1024,0);ctx.lineTo(1024,1792);ctx.lineTo(565,896);ctx.closePath();ctx.fill();
-    // Sun and three stars sit wholly inside the white triangle.
-    const sunX=842,sunY=896;
-    ctx.strokeStyle='#e6ae24';ctx.lineWidth=22;ctx.lineCap='round';
-    for(let i=0;i<8;i++){const a=i*Math.PI/4;ctx.beginPath();ctx.moveTo(sunX+Math.cos(a)*62,sunY+Math.sin(a)*62);ctx.lineTo(sunX+Math.cos(a)*142,sunY+Math.sin(a)*142);ctx.stroke();}
-    ctx.fillStyle='#efb72f';ctx.beginPath();ctx.arc(sunX,sunY,58,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#0038a8';ctx.fillRect(0,0,512,3072);
+    ctx.fillStyle='#c8102e';ctx.fillRect(512,0,512,3072);
+    // White hoist triangle: apex points toward the far end; its broad base is at the near end.
+    ctx.fillStyle='#fffdf4';ctx.beginPath();ctx.moveTo(512,1500);ctx.lineTo(0,3072);ctx.lineTo(1024,3072);ctx.closePath();ctx.fill();
+    const sunX=512,sunY=2360;
+    ctx.strokeStyle='#e6ae24';ctx.lineWidth=25;ctx.lineCap='round';
+    for(let i=0;i<8;i++){const a=i*Math.PI/4;ctx.beginPath();ctx.moveTo(sunX+Math.cos(a)*68,sunY+Math.sin(a)*68);ctx.lineTo(sunX+Math.cos(a)*155,sunY+Math.sin(a)*155);ctx.stroke();}
+    ctx.fillStyle='#efb72f';ctx.beginPath();ctx.arc(sunX,sunY,61,0,Math.PI*2);ctx.fill();
     function star(cx0,cy0,r){ctx.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?r*.42:r;const px=cx0+Math.cos(a)*rr,py=cy0+Math.sin(a)*rr;i?ctx.lineTo(px,py):ctx.moveTo(px,py);}ctx.closePath();ctx.fill();}
-    ctx.fillStyle='#efb72f';star(968,145,42);star(968,1647,42);star(585,896,42);
-    ctx.strokeStyle='rgba(255,255,255,.28)';ctx.lineWidth=5;
-    for(let x=64;x<1024;x+=128){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,1792);ctx.stroke();}
+    ctx.fillStyle='#efb72f';star(512,1555,43);star(128,2785,48);star(896,2785,48);
+    // Subtle longitudinal fabric seams, kept low contrast so the national emblem stays clear.
+    ctx.strokeStyle='rgba(255,255,255,.16)';ctx.lineWidth=4;
+    for(let x=96;x<1024;x+=128){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,3072);ctx.stroke();}
     const flagTexture=new THREE.CanvasTexture(flagCanvas);flagTexture.flipY=false;flagTexture.colorSpace=THREE.SRGBColorSpace;flagTexture.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),12);flagTexture.minFilter=THREE.LinearMipmapLinearFilter;flagTexture.magFilter=THREE.LinearFilter;
     const roofX1=x1-1.5,roofX2=x2+1.5,roofZ1=z1-2,roofZ2=z2-1,roofY=roofEdgeY;
     const across=32,along=64,positions=[],uvs=[],indices=[];
