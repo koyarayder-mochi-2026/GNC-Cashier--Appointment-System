@@ -323,10 +323,10 @@ The public home page now includes an interactive campus directory based on the r
 
 ## Interactive 3D campus map
 
-The home page campus directory now uses `campus-map-3d.js`, built with Three.js and OrbitControls (loaded from jsDelivr). It uses the supplied `assets/gnc-campus-map-reference.jpg` as the site-plan base, adds raised building masses and destination labels, and animates a red-and-white route from the Main Gate when a destination is selected.
+The home page campus directory uses `campus-map-3d.js`, built with Three.js and OrbitControls (loaded from jsDelivr). The supplied `assets/gnc-campus-map-reference.jpg` is rendered intact as the campus surface: the building shapes, original roof artwork, school flag, parking markings, shadows and printed labels are not covered by replacement 3D boxes. A perspective camera provides the 3D map view, with selectable transparent building hotspots, a selected-destination marker, and separate red routes with moving white dashes for all nine destinations.
 
 - Drag to orbit the campus; scroll/pinch to zoom.
-- Use the destination directory or select a 3D map label.
+- Use the destination directory or tap the corresponding building area on the map. The original image labels remain visible; transparent hotspot regions handle map selection.
 - Use + / − to zoom, ↺ to reset, and the home icon to focus on the Main Gate.
 - The map needs an internet connection to load the Three.js modules from jsDelivr.
 - Building heights and route paths are illustrative approximations based on the provided reference plan, not surveyed architectural or pedestrian data.
@@ -335,4 +335,7 @@ No Supabase schema, authentication, queue, admin, or notification code was chang
 
 
 ## 3D map loading fix
-The 3D map now includes an import map for Three.js and OrbitControls. OrbitControls imports the bare module specifier `three`; without the import-map mapping, the browser cannot resolve that dependency and the map remains stuck on “Preparing 3D campus…”. The page now also displays a helpful error if the 3D module does not initialize within 12 seconds. Keep `index.html`, `campus-map-3d.js`, `styles.css`, and the `assets/` directory together at the site root when deploying.
+The 3D map includes an import map for Three.js and OrbitControls. OrbitControls imports the bare module specifier `three`; without the import-map mapping, the browser cannot resolve that dependency and the map remains stuck on “Preparing 3D campus…”. The page now also displays a helpful error if the 3D module does not initialize within 12 seconds. Keep `index.html`, `campus-map-3d.js`, `styles.css`, and the `assets/` directory together at the site root when deploying.
+
+
+The route waypoint sets are maintained in the `routes` object in `campus-map-3d.js`. Each route begins at the Main Gate and ends at the approach edge of its selected destination; animated white dash markers move along a red ground-level path. Because the supplied plan is an illustration rather than a measured GIS/site survey, have school staff confirm the real pedestrian corridors before publishing as official directions.

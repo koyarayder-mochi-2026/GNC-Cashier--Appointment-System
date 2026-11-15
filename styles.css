@@ -455,3 +455,5 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 }
 
 .campus-3d-loading.campus-3d-load-error{padding:24px;text-align:center;color:#8a3e35;background:rgba(255,250,243,.96);line-height:1.7}
+.campus-3d-hint{max-width:calc(100% - 32px);white-space:normal;line-height:1.55}
+@media(max-width:520px){.campus-3d-hint{font-size:7px;letter-spacing:.08em;max-width:calc(100% - 20px);left:10px;bottom:9px}}
