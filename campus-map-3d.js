@@ -1,5 +1,5 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js';
-import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/controls/OrbitControls.js';
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 (() => {
   const $ = id => document.getElementById(id);
@@ -28,7 +28,7 @@ import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.161.0/exampl
   const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 3000);
   let renderer;
   try { renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:false}); }
-  catch (error) { $('campus3dLoading').textContent='Your browser could not start the 3D map. Please try an updated browser with WebGL enabled.'; console.error(error); return; }
+  catch (error) { $('campus3dLoading').textContent='Your browser could not start the 3D map. Please use an updated browser with WebGL enabled.'; $('campus3dLoading').classList.add('campus-3d-load-error'); console.error('GNC 3D map: WebGL renderer initialization failed.', error); return; }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;

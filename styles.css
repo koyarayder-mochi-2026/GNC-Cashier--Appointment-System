@@ -453,3 +453,5 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
  .campus-3d-section .campus-directory-panel{border-right:0;border-bottom:1px solid #dedfd4}
  .campus-3d-viewport{height:min(125vw,590px);min-height:400px}
 }
+
+.campus-3d-loading.campus-3d-load-error{padding:24px;text-align:center;color:#8a3e35;background:rgba(255,250,243,.96);line-height:1.7}

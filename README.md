@@ -332,3 +332,7 @@ The home page campus directory now uses `campus-map-3d.js`, built with Three.js 
 - Building heights and route paths are illustrative approximations based on the provided reference plan, not surveyed architectural or pedestrian data.
 
 No Supabase schema, authentication, queue, admin, or notification code was changed for this map upgrade.
+
+
+## 3D map loading fix
+The 3D map now includes an import map for Three.js and OrbitControls. OrbitControls imports the bare module specifier `three`; without the import-map mapping, the browser cannot resolve that dependency and the map remains stuck on “Preparing 3D campus…”. The page now also displays a helpful error if the 3D module does not initialize within 12 seconds. Keep `index.html`, `campus-map-3d.js`, `styles.css`, and the `assets/` directory together at the site root when deploying.

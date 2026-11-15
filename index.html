@@ -202,7 +202,27 @@
   <footer class="site-footer"><div class="footer-brand"><img class="footer-crest" src="assets/gnc-official-crest.png" alt="" width="42" height="42"><strong>GNC</strong><span>Student Cashier Queue</span></div><p>Guagua National Colleges, Inc. · Online queue concept</p><small>For school demonstration and testing. Confirm official cashier procedures before deployment. <a href="admin/" class="footer-admin-link">Administrator access</a></small></footer>
   <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
+  <!-- Three.js import map: OrbitControls imports the bare specifier "three".
+       Without this mapping, browsers stop module evaluation and leave the loader visible. -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
+      }
+    }
+  </script>
   <script type="module" src="campus-map-3d.js"></script>
+  <script>
+    // Surface CDN/import/WebGL startup failures instead of leaving an endless loader.
+    window.setTimeout(() => {
+      const loading = document.getElementById('campus3dLoading');
+      if (loading && !loading.classList.contains('is-hidden')) {
+        loading.textContent = 'The 3D campus could not initialize. Check your internet connection, enable WebGL, and reload the page.';
+        loading.classList.add('campus-3d-load-error');
+      }
+    }, 12000);
+  </script>
   <script src="config.js"></script>
   <script type="module" src="app.js"></script>
 </body>
