@@ -19,7 +19,7 @@ let OrbitControls = null;
   const MAP_W = 351, MAP_H = 570;
   const GATE = [252,548];
   const destinations = [
-    {id:'beta',name:'Beta Building',code:'BETA',color:'#287b42',focus:[247,345],footprint:[214,300,291,476],description:'Beta Building — use the west-side walkway from the Main Gate.'},
+    {id:'beta',name:'Beta Building',code:'BETA',color:'#287b42',focus:[229,344],footprint:[210,300,248,392],description:'Beta Building — cashier and administration offices. Follow the west-side walkway from the Main Gate.'},
     {id:'banzali',name:'Banzali Hall',code:'BH',color:'#c94c50',focus:[322,385],footprint:[306,289,346,478],description:'Banzali Hall — follow the eastern perimeter walkway.'},
     {id:'tanj',name:'Tanjangco Hall',code:'TH',color:'#27864d',focus:[135,199],footprint:[90,167,181,234],description:'Tanjangco Hall — follow the central passage, then turn west.'},
     {id:'goseco',name:'Goseco Hall',code:'GH',color:'#d8aa35',focus:[258,180],footprint:[218,155,348,296],description:'Goseco Hall — follow the central passage toward the north-east.'},
@@ -50,7 +50,7 @@ let OrbitControls = null;
   // 3D paths are adjusted to the clear walkable gaps between the modeled buildings.
   // The already-approved 2D linework above is deliberately left unchanged.
   const routes3d = {
-    beta:      [[252,548],[212,548],[212,480],[212,380],[210,380],[210,365]],
+    beta:      [[252,548],[205,548],[205,480],[205,420],[229,420],[229,400]],
     banzali:   [[252,548],[212,548],[212,480],[250,480],[300,480],[300,430],[305,430],[305,398]],
     tanj:      [[252,548],[212,548],[212,480],[212,380],[212,298],[217,298],[217,240],[185,240],[185,225]],
     goseco:    [[252,548],[212,548],[212,480],[212,380],[212,298],[217,298],[235,298]],
@@ -133,7 +133,7 @@ let OrbitControls = null;
     {id:'limlinganNorthWing',name:'',rect:[132,244,216,278],h:24,wall:'#3d7049',roof:[132,244,216,278],color:'#a8c2a0',roofStyle:'hip'},
     {id:'limlingan',name:'Limlingan Hall',rect:[162,278,198,375],h:25,wall:'#3d7049',roof:[162,278,198,375],color:'#a8c2a0',roofStyle:'flat'},
     {id:'puno',name:'Puno Hall',rect:[160,376,198,478],h:25,wall:'#365b6e',roof:[160,376,198,478],color:'#a7c3cb',roofStyle:'hip'},
-    {id:'beta',name:'Beta Building',rect:[214,300,291,476],h:36,wall:'#15583a',roof:[214,300,291,476],color:'#d5d3c4',roofStyle:'cashier'},
+    {id:'beta',name:'Beta Building',rect:[210,300,248,392],h:37,wall:'#15583a',roof:[210,300,248,392],color:'#d5d3c4',roofStyle:'cashier'},
     {id:'banzali',name:'Banzali Hall',rect:[306,289,346,478],h:37,wall:'#853d3d',roof:[306,289,346,478],color:'#d78c8b',roofStyle:'flat'},
     {id:'gateLeft',name:'',rect:[136,502,198,548],h:17,wall:'#6f6c5d',roof:[136,502,198,548],color:'#e5ddcb',roofStyle:'hip'},
     {id:'gate',name:'Main Gate',rect:[210,477,290,560],h:21,wall:'#6a6251',roof:[210,477,290,560],color:'#e8dfcc',roofStyle:'hip',type:'portico'},
@@ -283,72 +283,198 @@ let OrbitControls = null;
     });
   }
   function addCashierBuilding(b){
-    // Beta is the enclosed cashier/administration building, not a basketball gym.
+    // Beta Building is the enclosed cashier/administration block. The gym and its
+    // Philippine-flag canopy are a separate structure immediately to the east.
     const [x1,z1,x2,z2]=b.rect,w=x2-x1,d=z2-z1,cx=(x1+x2)/2,cz=(z1+z2)/2;
-    const green=new THREE.MeshStandardMaterial({color:0x15583a,roughness:.86});
-    const red=new THREE.MeshStandardMaterial({color:0xb51e2b,roughness:.78});
-    const blue=new THREE.MeshStandardMaterial({color:0x064b9b,roughness:.78});
-    const cream=new THREE.MeshStandardMaterial({color:0xe7e0d0,roughness:.82});
-    const darkGlass=new THREE.MeshStandardMaterial({color:0x173d50,roughness:.3,metalness:.12,emissive:0x07151c,emissiveIntensity:.08});
-    const body=new THREE.Mesh(new THREE.BoxGeometry(w,b.h,d),[green,green,green,green,green,green]);
-    body.position.copy(world(cx,cz,b.h/2));body.castShadow=true;body.receiveShadow=true;scene.add(body);
-    // Flat parapet roof with two solid architectural colour fields, matching the supplied reference.
-    const roofBase=new THREE.Mesh(new THREE.BoxGeometry(w+2,1.8,d+2),cream);
-    roofBase.position.copy(world(cx,cz,b.h+.45));roofBase.castShadow=true;roofBase.receiveShadow=true;scene.add(roofBase);
-    const panelY=b.h+1.42, inset=4;
-    const panelW=(w-2*inset)/2;
-    [[cx-panelW/2-inset/2,blue],[cx+panelW/2+inset/2,red]].forEach(([x,mat])=>{
-      const panel=new THREE.Mesh(new THREE.BoxGeometry(panelW,d-10,.42),mat);
-      panel.position.copy(world(x,cz,panelY));panel.castShadow=true;panel.receiveShadow=true;scene.add(panel);
-      // Fine raised perimeter trim gives the roof a built, non-image surface finish.
-      [[panelW,.55,1,x, panelY+.24,cz-(d-10)/2],[panelW,.55,1,x,panelY+.24,cz+(d-10)/2],
-       [1,.55,d-10,x-panelW/2,panelY+.24,cz],[1,.55,d-10,x+panelW/2,panelY+.24,cz]].forEach(([bw,bh,bd,px,py,pz])=>{
-        const trim=new THREE.Mesh(new THREE.BoxGeometry(bw,bh,bd),cream);trim.position.copy(world(px,pz,py));trim.castShadow=true;scene.add(trim);
-      });
-    });
-    // Recessed cashier service windows and a clearly defined public entrance on the south face.
-    const frontZ=z2+.72;
-    const serviceCount=3;
-    for(let i=0;i<serviceCount;i++){
-      const x=cx+(i-1)*18;
-      const frame=new THREE.Mesh(new THREE.BoxGeometry(13,8,1.1),cream);
-      frame.position.copy(world(x,frontZ,b.h*.43));frame.castShadow=true;scene.add(frame);
-      const glass=new THREE.Mesh(new THREE.BoxGeometry(11.2,6.2,1.18),darkGlass);
-      glass.position.copy(world(x,frontZ+.12,b.h*.43));glass.castShadow=true;scene.add(glass);
-      const counter=new THREE.Mesh(new THREE.BoxGeometry(13,1.1,2.8),new THREE.MeshStandardMaterial({color:0xb9a77f,roughness:.72}));
-      counter.position.copy(world(x,frontZ+1.2,b.h*.43-4.3));counter.castShadow=true;scene.add(counter);
+    const green=new THREE.MeshStandardMaterial({color:0x15583a,roughness:.82,metalness:.015});
+    const greenDark=new THREE.MeshStandardMaterial({color:0x0d3d29,roughness:.86});
+    const red=new THREE.MeshStandardMaterial({color:0xb51e2b,roughness:.76});
+    const blue=new THREE.MeshStandardMaterial({color:0x064b9b,roughness:.76});
+    const cream=new THREE.MeshStandardMaterial({color:0xe7e0d0,roughness:.84});
+    const trim=new THREE.MeshStandardMaterial({color:0xc9c0ab,roughness:.76});
+    const darkGlass=new THREE.MeshStandardMaterial({color:0x173d50,roughness:.28,metalness:.16,emissive:0x07151c,emissiveIntensity:.1});
+    const brass=new THREE.MeshStandardMaterial({color:0xb79856,roughness:.42,metalness:.24});
+    const box=(bw,bh,bd,x,z,y,mat,opts={})=>{
+      const m=new THREE.Mesh(new THREE.BoxGeometry(bw,bh,bd),mat);
+      m.position.copy(world(x,z,y));m.castShadow=opts.castShadow!==false;m.receiveShadow=opts.receiveShadow!==false;scene.add(m);return m;
+    };
+    // Solid three-storey body with a green rendered facade (not a pasted image texture).
+    box(w,b.h,d,cx,cz,b.h/2,green);
+    // Cream floor bands and darker plinth make each storey legible at campus scale.
+    box(w+1.6,2,d+1.6,cx,cz,2,greenDark);
+    for(let floor=1;floor<=2;floor++){
+      const y=b.h*floor/3;
+      box(w+1.0,.72,d+1.0,cx,cz,y,trim,{castShadow:false});
     }
-    const doorFrame=new THREE.Mesh(new THREE.BoxGeometry(10,15,1.4),cream);
-    doorFrame.position.copy(world(cx,frontZ,b.h*.16));doorFrame.castShadow=true;scene.add(doorFrame);
-    const door=new THREE.Mesh(new THREE.BoxGeometry(7.6,12.8,1.5),darkGlass);
-    door.position.copy(world(cx,frontZ+.18,b.h*.16));door.castShadow=true;scene.add(door);
-    // Long elevations have repeated recessed glazing, mullions and concrete sill bands.
-    for(const sideX of [x1-.72,x2+.72]){
-      for(let row=0;row<3;row++){
-        const y=9+row*9.2;
-        for(let j=0;j<7;j++){
-          const z=z1+13+j*22;
-          if(z>=z2-7)continue;
-          const frame=new THREE.Mesh(new THREE.BoxGeometry(1.05,5.5,11.5),cream);
-          frame.position.copy(world(sideX,z,y));frame.castShadow=true;scene.add(frame);
-          const pane=new THREE.Mesh(new THREE.BoxGeometry(1.12,4.1,9.8),darkGlass);
-          pane.position.copy(world(sideX+(sideX<x1?-.16:.16),z,y));pane.castShadow=true;scene.add(pane);
-          const sill=new THREE.Mesh(new THREE.BoxGeometry(2.2,.7,12.2),cream);
-          sill.position.copy(world(sideX,z,y-3.1));sill.castShadow=true;scene.add(sill);
+    // Flat parapet cap with distinct red (north) and blue (south) roof fields.
+    box(w+3,1.9,d+3,cx,cz,b.h+.5,cream);
+    const panelY=b.h+1.55, panelW=w-7, panelD=(d-12)/2;
+    box(panelW,.46,panelD,cx,z1+3+panelD/2,panelY,red);
+    box(panelW,.46,panelD,cx,z2-3-panelD/2,panelY,blue);
+    // Raised cream perimeter coping; the flat roof panels sit horizontally on the cap.
+    const copingY=panelY+.45;
+    box(w+1,.8,1.6,cx,z1+1,copingY,cream);
+    box(w+1,.8,1.6,cx,z2-1,copingY,cream);
+    box(1.6,.8,d+1,cx-w/2+1,cz,copingY,cream);
+    box(1.6,.8,d+1,cx+w/2-1,cz,copingY,cream);
+    // Side elevations: three floors of framed, blue-tinted windows with proper sill depth.
+    const sideFrame=new THREE.MeshStandardMaterial({color:0xe2ddcf,roughness:.72});
+    const sideXs=[x1-.66,x2+.66];
+    const windowZ=[z1+17,cz,z2-17];
+    for(const sx of sideXs){
+      for(let floor=0;floor<3;floor++){
+        const y=8+floor*9.3;
+        for(const zz of windowZ){
+          box(1.15,6.1,11.4,sx,zz,y,sideFrame);
+          box(1.28,4.7,9.8,sx+(sx<x1?-.22:.22),zz,y,darkGlass);
+          box(2.0,.65,12.2,sx+(sx<x1?-.25:.25),zz,y-3.35,trim);
+          box(2.0,.5,12.2,sx+(sx<x1?-.25:.25),zz,y+3.25,trim,{castShadow:false});
         }
       }
     }
-    // A shallow covered public entrance and steps make the cashier access legible at campus scale.
-    const porch=new THREE.Mesh(new THREE.BoxGeometry(22,1.5,9),cream);
-    porch.position.copy(world(cx,z2+5,b.h*.035));porch.receiveShadow=true;scene.add(porch);
-    const awning=new THREE.Mesh(new THREE.BoxGeometry(22,1.1,5),green);
-    awning.position.copy(world(cx,z2+2.6,b.h*.34));awning.castShadow=true;scene.add(awning);
-    // Main sign is a physical plaque mounted on the front elevation, not a roof sticker.
-    const plaque=new THREE.Mesh(new THREE.BoxGeometry(43,7.8,1.25),green);
-    plaque.position.copy(world(cx,frontZ+1.0,b.h*.78));plaque.castShadow=true;scene.add(plaque);
+    // Front elevation: a recessed main entrance and three distinct cashier service windows.
+    const frontZ=z2+.78;
+    box(w-7,2.0,1.6,cx,frontZ,b.h*.78,greenDark);
+    const serviceY=b.h*.48;
+    [-12,0,12].forEach((offset,index)=>{
+      const x=cx+offset;
+      box(10.2,7.4,1.35,x,frontZ,serviceY,cream);
+      box(8.6,5.7,1.5,x,frontZ+.18,serviceY,darkGlass);
+      box(10.8,1.0,3.1,x,frontZ+1.15,serviceY-4.0,brass);
+      // Subtle counter sill and small transaction slot below each pane.
+      box(2.1,.65,.45,x,frontZ+1.55,serviceY-1.2,cream,{castShadow:false});
+    });
+    const doorZ=frontZ+1.05;
+    box(9.2,16,1.8,cx,doorZ,8.4,cream);
+    box(6.8,13.5,2.0,cx,doorZ+.2,8.5,darkGlass);
+    box(10.6,1.0,5.0,cx,frontZ+3,1.2,cream);
+    // Small covered cashier entrance with two square columns and a green canopy.
+    box(22,1.5,8,cx,z2+6,1.3,cream);
+    box(22,1.15,5,cx,z2+3.4,14.6,green);
+    [-9,9].forEach(dx=>box(1.5,13.0,1.5,cx+dx,z2+4.3,7.2,cream));
+    // Physical front sign, mounted on the facade rather than floating over the roof.
+    box(34,7.0,1.4,cx,frontZ+1.0,b.h*.82,greenDark);
     const sign=new THREE.Sprite(new THREE.SpriteMaterial({map:labelTexture('BETA BUILDING · CASHIER','#17603e'),transparent:true,depthTest:true,depthWrite:false}));
-    sign.scale.set(40,6.4,1);sign.position.copy(world(cx,frontZ+1.85,b.h*.78));sign.renderOrder=12;scene.add(sign);
-    b._roofTop=b.h+1.7;
+    sign.scale.set(33,6.5,1);sign.position.copy(world(cx,frontZ+1.85,b.h*.82));sign.renderOrder=12;scene.add(sign);
+    b._roofTop=b.h+2.0;
+  }
+
+  function addBasketballGym(){
+    // Separate open-sided gym to the east of Beta Building. The flag canopy is
+    // procedural geometry + a generated flag material, not a screenshot pasted on a box.
+    const x1=251.5,z1=300,x2=302.5,z2=474,w=x2-x1,d=z2-z1,cx=(x1+x2)/2,cz=(z1+z2)/2;
+    const roofEdgeY=48.5;
+    const materials={
+      apron:new THREE.MeshStandardMaterial({color:0xa83c2a,roughness:.9}),
+      court:new THREE.MeshStandardMaterial({color:0x123e71,roughness:.78}),
+      green:new THREE.MeshStandardMaterial({color:0x15583a,roughness:.78}),
+      cream:new THREE.MeshStandardMaterial({color:0xe8e0cf,roughness:.84}),
+      steel:new THREE.MeshStandardMaterial({color:0x9da9a0,roughness:.42,metalness:.28}),
+      darkSteel:new THREE.MeshStandardMaterial({color:0x30443c,roughness:.55,metalness:.18}),
+      line:new THREE.MeshStandardMaterial({color:0xf7f1df,roughness:.7}),
+      backboard:new THREE.MeshStandardMaterial({color:0xdce7e5,roughness:.3,metalness:.12,transparent:true,opacity:.94}),
+      orange:new THREE.MeshStandardMaterial({color:0xe87527,roughness:.45,metalness:.08})
+    };
+    const box=(bw,bh,bd,x,z,y,mat,opts={})=>{
+      const m=new THREE.Mesh(new THREE.BoxGeometry(bw,bh,bd),mat);
+      m.position.copy(world(x,z,y));m.castShadow=opts.castShadow!==false;m.receiveShadow=opts.receiveShadow!==false;scene.add(m);return m;
+    };
+    // Low perimeter plinth, red apron and a blue court with crisp painted markings.
+    box(w+2,2,d+2,cx,cz,1.1,materials.cream);
+    box(w,1.0,d,cx,cz,2.45,materials.apron);
+    const courtX1=x1+4,courtX2=x2-4,courtZ1=z1+5,courtZ2=z2-5;
+    const courtCx=(courtX1+courtX2)/2,courtCz=(courtZ1+courtZ2)/2,courtW=courtX2-courtX1,courtD=courtZ2-courtZ1;
+    box(courtW,.65,courtD,courtCx,courtCz,3.25,materials.court);
+    const paintY=3.66;
+    const line=(ax,az,bx,bz,thick=.55)=>{
+      if(Math.abs(az-bz)<.001) box(Math.abs(bx-ax),.16,thick,(ax+bx)/2,az,paintY,materials.line,{castShadow:false});
+      else if(Math.abs(ax-bx)<.001) box(thick,.16,Math.abs(bz-az),ax,(az+bz)/2,paintY,materials.line,{castShadow:false});
+    };
+    line(courtX1,courtZ1,courtX2,courtZ1);line(courtX1,courtZ2,courtX2,courtZ2);
+    line(courtX1,courtZ1,courtX1,courtZ2);line(courtX2,courtZ1,courtX2,courtZ2);
+    line(courtX1,courtCz,courtX2,courtCz,.62);
+    const circleMat=materials.line;
+    const circle=new THREE.Mesh(new THREE.TorusGeometry(9,.28,8,64),circleMat);
+    circle.rotation.x=Math.PI/2;circle.position.copy(world(courtCx,courtCz,paintY+.1));circle.receiveShadow=true;scene.add(circle);
+    // Painted keys, free-throw circles and restricted arcs at both basket ends.
+    const keyW=18,keyD=24;
+    [courtZ1+3,courtZ2-keyD-3].forEach(kz=>{
+      line(courtCx-keyW/2,kz,courtCx+keyW/2,kz,.5);
+      line(courtCx-keyW/2,kz,courtCx-keyW/2,kz+keyD,.5);
+      line(courtCx+keyW/2,kz,courtCx+keyW/2,kz+keyD,.5);
+      const ft=new THREE.Mesh(new THREE.TorusGeometry(7,.24,7,48),circleMat);
+      ft.rotation.x=Math.PI/2;ft.position.copy(world(courtCx,kz+keyD,paintY+.1));scene.add(ft);
+    });
+    // Basketball hoops at both ends: vertical backboard, support arm and a raised orange rim.
+    [courtZ1+7,courtZ2-7].forEach((boardZ,index)=>{
+      const inward=index===0?1:-1;
+      box(9,6.2,.78,courtCx,boardZ,13.3,materials.backboard);
+      box(.65,7.8,.65,courtCx,boardZ-inward*2.6,9.1,materials.steel);
+      box(5.8,.5,.5,courtCx,boardZ-inward*1.1,11.2,materials.darkSteel);
+      const rim=new THREE.Mesh(new THREE.TorusGeometry(2.15,.26,8,40),materials.orange);
+      rim.rotation.x=Math.PI/2;rim.position.copy(world(courtCx,boardZ+inward*2.2,10.6));rim.castShadow=true;scene.add(rim);
+      box(5.4,.24,.24,courtCx,boardZ+inward*2.2,9.3,materials.line,{castShadow:false});
+    });
+    // Open-sided gym columns and longitudinal edge beams.
+    const postXs=[x1+3,x2-3];
+    const postZs=[z1+7,z1+42,z1+78,z1+114,z1+150,z2-7];
+    postXs.forEach(px=>postZs.forEach(pz=>{
+      box(2.3,roofEdgeY-2.5,2.3,px,pz,(roofEdgeY-2.5)/2,materials.green);
+      box(3.6,1.1,3.6,px,pz,roofEdgeY-2.0,materials.cream);
+      box(3.0,1.0,3.0,px,pz,3.0,materials.cream);
+    }));
+    box(2.0,2.0,d+5,x1+3,cz,roofEdgeY-1.5,materials.green);
+    box(2.0,2.0,d+5,x2-3,cz,roofEdgeY-1.5,materials.green);
+
+    // Procedurally draw a Philippine flag for the arched canopy. This is a generated
+    // material on curved geometry, so the flag follows the roof curvature in 3D.
+    const flagCanvas=document.createElement('canvas');flagCanvas.width=1024;flagCanvas.height=1792;
+    const ctx=flagCanvas.getContext('2d');
+    ctx.fillStyle='#0645a0';ctx.fillRect(0,0,512,1792);
+    ctx.fillStyle='#c9152b';ctx.fillRect(512,0,512,1792);
+    ctx.fillStyle='#fffdf4';ctx.beginPath();ctx.moveTo(0,1792);ctx.lineTo(1024,1792);ctx.lineTo(512,1240);ctx.closePath();ctx.fill();
+    // Sun, eight rays, three stars and subtle printed seam lines are drawn as flag details.
+    const sunX=512,sunY=1590;
+    ctx.strokeStyle='#e6ae24';ctx.lineWidth=22;ctx.lineCap='round';
+    for(let i=0;i<8;i++){const a=i*Math.PI/4;ctx.beginPath();ctx.moveTo(sunX+Math.cos(a)*72,sunY+Math.sin(a)*72);ctx.lineTo(sunX+Math.cos(a)*148,sunY+Math.sin(a)*148);ctx.stroke();}
+    ctx.fillStyle='#efb72f';ctx.beginPath();ctx.arc(sunX,sunY,64,0,Math.PI*2);ctx.fill();
+    function star(cx0,cy0,r){ctx.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?r*.42:r;const px=cx0+Math.cos(a)*rr,py=cy0+Math.sin(a)*rr;i?ctx.lineTo(px,py):ctx.moveTo(px,py);}ctx.closePath();ctx.fill();}
+    ctx.fillStyle='#efb72f';star(95,1688,43);star(929,1688,43);star(512,1300,43);
+    ctx.strokeStyle='rgba(255,255,255,.28)';ctx.lineWidth=5;
+    for(let x=64;x<1024;x+=128){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,1792);ctx.stroke();}
+    const flagTexture=new THREE.CanvasTexture(flagCanvas);flagTexture.colorSpace=THREE.SRGBColorSpace;flagTexture.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),12);flagTexture.minFilter=THREE.LinearMipmapLinearFilter;flagTexture.magFilter=THREE.LinearFilter;
+    const roofX1=x1-1.5,roofX2=x2+1.5,roofZ1=z1-2,roofZ2=z2-1,roofY=roofEdgeY;
+    const across=32,along=64,positions=[],uvs=[],indices=[];
+    const roofHeight=(u,v)=>roofY+4.2*(1-Math.pow((u-.5)*2,2))+.45*Math.sin(v*Math.PI);
+    for(let j=0;j<=along;j++){
+      const v=j/along;
+      for(let i=0;i<=across;i++){
+        const u=i/across,x=roofX1+(roofX2-roofX1)*u,z=roofZ1+(roofZ2-roofZ1)*v,y=roofHeight(u,v);
+        const p=world(x,z,y);positions.push(p.x,p.y,p.z);uvs.push(u,v);
+        if(i<across&&j<along){const a=j*(across+1)+i,b=a+1,c=a+(across+1),d=c+1;indices.push(a,c,b,b,c,d);}
+      }
+    }
+    const canopyGeometry=new THREE.BufferGeometry();
+    canopyGeometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+    canopyGeometry.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));canopyGeometry.setIndex(indices);canopyGeometry.computeVertexNormals();
+    const canopyMat=new THREE.MeshStandardMaterial({map:flagTexture,roughness:.82,metalness:.015,side:THREE.DoubleSide});
+    const canopy=new THREE.Mesh(canopyGeometry,canopyMat);canopy.castShadow=true;canopy.receiveShadow=true;canopy.renderOrder=4;scene.add(canopy);
+    // Subtle curved structural ribs follow the canopy, not a flat rectangular slab.
+    const ribMat=new THREE.MeshStandardMaterial({color:0x66776e,roughness:.48,metalness:.28});
+    for(let j=0;j<=8;j++){
+      const v=j/8,z=roofZ1+(roofZ2-roofZ1)*v,pts=[];
+      for(let i=0;i<=24;i++){const u=i/24;pts.push(world(roofX1+(roofX2-roofX1)*u,z,roofHeight(u,v)-.35));}
+      const curve=new THREE.CatmullRomCurve3(pts);const rib=new THREE.Mesh(new THREE.TubeGeometry(curve,40,.48,8,false),ribMat);rib.castShadow=true;scene.add(rib);
+    }
+    // Continuous side rails and end bows define a finished canopy silhouette.
+    for(const px of [roofX1,roofX2]){
+      const pts=[];for(let j=0;j<=32;j++){const v=j/32;pts.push(world(px,roofZ1+(roofZ2-roofZ1)*v,roofHeight(px===roofX1?0:1,v)));}
+      scene.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),48,.62,8,false),ribMat));
+    }
+    // Gym name plaque on the southern fascia; the canopy and court remain open-sided.
+    box(34,5.2,1.2,cx,z2+1,roofEdgeY-5,materials.green);
+    const gymSign=new THREE.Sprite(new THREE.SpriteMaterial({map:labelTexture('BASKETBALL GYM','#17603e'),transparent:true,depthTest:true,depthWrite:false}));
+    gymSign.scale.set(30,5.9,1);gymSign.position.copy(world(cx,z2+1.5,roofEdgeY-4.5));gymSign.renderOrder=10;scene.add(gymSign);
   }
 
   function addLimlinganPedestrianBridge(){
@@ -565,7 +691,7 @@ let OrbitControls = null;
       [7,0,320,119],[7,116,69,239],[66,118,219,168],[88,166,184,237],
       [216,153,320,204],[216,202,235,264],[316,202,350,300],[235,263,320,300],
       [40,237,134,281],[130,242,218,280],[160,276,200,378],[157,374,200,481],
-      [211,297,295,480],[303,286,350,482],[132,500,210,551],[207,475,292,562],[290,486,350,560]
+      [207,297,250,395],[249,297,306,480],[303,286,350,482],[132,500,210,551],[207,475,292,562],[290,486,350,560]
     ];
     ctx.fillStyle='#fbfaf6';masks.forEach(([x1,y1,x2,y2])=>ctx.fillRect(x1*sx,y1*sy,(x2-x1)*sx,(y2-y1)*sy));
     // Campus perimeter stripe and subtle pedestrian-court guide lines.
@@ -693,6 +819,7 @@ let OrbitControls = null;
       const ground=new THREE.Mesh(new THREE.PlaneGeometry(W,H),new THREE.MeshStandardMaterial({map:groundTex,color:0xffffff,roughness:1,metalness:0}));ground.rotation.x=-Math.PI/2;ground.position.y=0;ground.receiveShadow=true;scene.add(ground);
       groundGroup=new THREE.Group();scene.add(groundGroup);
       BUILDINGS.forEach(b=>addBuilding(image,b));
+      addBasketballGym();
       addParkingStripeLines();
       addMainGateArchitecture();addGosecoCourtDetails();addLimlinganPedestrianBridge();
       routeGroup=new THREE.Group();scene.add(routeGroup);
