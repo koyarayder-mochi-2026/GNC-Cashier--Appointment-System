@@ -1,23 +1,21 @@
-# GNC Philippine Flag Canopy, Gym Benches and Beta Roof QA
+# GNC Gym Flag Surface and Spectator Seating QA
 
-## Implemented corrections
-- Gym flag canopy texture: blue left, red right, white triangle at the near/south end, with gold sun and three stars.
-- Flag canopy remains raised on curved 3D geometry; no flag texture is applied to the gym floor.
-- Gym floor remains a solid blue basketball court with white court markings.
-- Added three stepped spectator rows along the west sideline, each with structural tier support, timber seating, backrest and repeated slats. Added a separate aisle stair.
-- Beta Building cashier roof changed to school green; the prior red/blue roof fields were removed.
+## Corrections implemented
+- Flag canopy UVs now map the canvas top to the north end and the canvas base to the near/south end: blue field on the left, red field on the right, white triangle with sun and stars at the near end.
+- The flag material is front-face only on the raised curved canopy. A separate plain cream soffit is visible from inside the gym, preventing the flag from appearing as a mirrored floor/ceiling graphic.
+- The base campus artwork contains a flag illustration below the Beta/gym complex. That complete footprint is masked from the 3D ground texture and replaced by a light concrete apron with subtle joints; the 2D reference itself is untouched.
+- Spectator benches now face east toward the court. The lowest/front row is at the east edge nearest the court, middle and rear rows rise toward the west, and backrests are on the west/rear edge.
+- The access stair now climbs from the court/east side toward the higher west/rear seating rows.
 
-## Automated checks
-- Node syntax: passed for all project JavaScript files.
-- HTML IDs: no duplicates.
-- Local HTML asset references: all resolve.
-- CSS brace balance: passed.
-- Flag canvas ratio and color-field orientation: verified in source (1024x3072, blue left, red right, white triangle at near end).
-- Bench row clearances: checked against the gym west support-column line and court boundary.
-- Bench length remains within the court/gym footprint.
-- Access stair placement checked clear of the end support column and basket support line.
-- Beta roof uses green material only; flag remains on gym canopy only.
-- Existing bridges, stage, Rizal monument, parking, routes, admin, cashier, Supabase and notification source files retained.
+## Source-level checks
+- `node --check` passed for all seven JavaScript files.
+- 2D and 3D route waypoint arrays remain present and unchanged.
+- Bench seat rows are ordered front-to-back with decreasing X positions and increasing seat heights; each backrest is on the west side of its seat.
+- Front row seat envelope ends at x=263.025 while the court begins at x=263.5, leaving a 0.475-unit aisle clearance. The row centers step westward as seat height increases.
+- Flag canvas remains 1024 × 3072, blue left/red right, triangular hoist white field at the near/south end.
+- `flagTexture` is applied only to the raised canopy material; canopy is `FrontSide`; underside is untextured cream.
+- Ground texture mask covers x=198..312 and y=278..486 map coordinates, which includes the complete underlying flag artwork footprint under the Beta/gym complex.
+- HTML IDs, local asset paths, CSS braces, and ZIP integrity checked.
 
-## Visual test limitation
-These are source and geometry placement checks. A live GPU/WebGL render in Vercel was not available here. Confirm the final canopy UV orientation and bench visibility in the deployed 3D view.
+## Runtime limitation
+The project requires a real browser with WebGL to confirm final lighting and material appearance. Static geometry/source checks do not replace a live GPU render on the deployed Vercel site.

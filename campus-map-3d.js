@@ -415,34 +415,39 @@ let OrbitControls = null;
     const benchWood=new THREE.MeshStandardMaterial({color:0x6d513b,roughness:.78});
     const benchEdge=new THREE.MeshStandardMaterial({color:0x174b36,roughness:.78});
     const benchZ=(courtZ1+courtZ2)/2,benchLength=Math.min(78,courtZ2-courtZ1-16);
+    // Spectator bleachers face EAST toward the playing court. The front/lowest row is
+    // nearest the court; each rear row steps UP and WEST so no seat faces away from play.
     const benchRows=[
-      {x:x1+5.3,seatY:5.1},
-      {x:x1+7.25,seatY:7.5},
-      {x:x1+9.2,seatY:9.9}
+      {x:x1+10.25,seatY:5.15}, // front row, nearest the east-side court edge
+      {x:x1+7.35,seatY:7.65},  // middle row
+      {x:x1+4.45,seatY:10.15}  // rear/top row, farthest from the court
     ];
     benchRows.forEach((row,index)=>{
+      const seatWidth=2.55;
       const supportH=row.seatY-3.7;
-      box(1.8,supportH,benchLength,row.x,benchZ,3.7+supportH/2,benchConcrete);
-      box(1.95,.5,benchLength,row.x+.08,benchZ,row.seatY,benchWood);
-      // Individual slats make the seats read as spectator benches rather than a floor decal.
+      box(seatWidth,supportH,benchLength,row.x,benchZ,3.7+supportH/2,benchConcrete);
+      box(seatWidth+.22,.5,benchLength,row.x+.05,benchZ,row.seatY,benchWood);
+      // Individual seat slats run along the spectator row and face the court to the EAST.
       const slatCount=28,slatStep=benchLength/slatCount;
       for(let i=0;i<slatCount;i++){
         const zz=benchZ-benchLength/2+(i+.5)*slatStep;
-        box(1.84,.12,.22,row.x+.08,zz,row.seatY+.31,benchEdge,{castShadow:false});
+        box(seatWidth,.12,.22,row.x+.05,zz,row.seatY+.31,benchEdge,{castShadow:false});
       }
-      // Continuous backrest, raised behind each seat; faces the basketball court.
-      box(.24,1.65,benchLength,row.x-.72,benchZ,row.seatY+1.05,benchWood);
-      box(.36,.25,benchLength,row.x-.72,benchZ,row.seatY+1.92,benchEdge,{castShadow:false});
-      // Short end cheeks anchor each tier and prevent the rows looking like floating planks.
+      // Backrests sit on the WEST/rear edge; the open seat edge faces the playing court.
+      const backX=row.x-seatWidth/2+.12;
+      box(.3,1.65,benchLength,backX,benchZ,row.seatY+1.05,benchWood);
+      box(.42,.25,benchLength,backX,benchZ,row.seatY+1.92,benchEdge,{castShadow:false});
+      // End cheeks anchor each tier and keep the stepped seating structure continuous.
       for(const endZ of [benchZ-benchLength/2,benchZ+benchLength/2]){
-        box(1.95,Math.max(1.2,supportH),1.0,row.x,endZ,3.7+Math.max(1.2,supportH)/2,benchEdge);
+        box(seatWidth+.25,Math.max(1.2,supportH),1.0,row.x,endZ,3.7+Math.max(1.2,supportH)/2,benchEdge);
       }
     });
     // A compact three-step access stair enters the seating tiers from the south aisle.
     const benchStepTrim=new THREE.MeshStandardMaterial({color:0xe0dacc,roughness:.82});
     const accessZ=z2-12;
+    // Access stair climbs from the east/court side toward the higher west/rear rows.
     for(let step=0;step<3;step++){
-      const sx=x1+4.8+step*1.95,stepH=1.25+step*1.25;
+      const sx=x1+8.7-step*1.95,stepH=1.25+step*1.25;
       box(1.65,stepH,6.5,sx,accessZ,3.7+stepH/2,benchConcrete);
       box(1.72,.22,6.6,sx,accessZ,3.7+stepH+.11,benchStepTrim);
     }
@@ -529,7 +534,7 @@ let OrbitControls = null;
     // Subtle longitudinal fabric seams, kept low contrast so the national emblem stays clear.
     ctx.strokeStyle='rgba(255,255,255,.16)';ctx.lineWidth=4;
     for(let x=96;x<1024;x+=128){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,3072);ctx.stroke();}
-    const flagTexture=new THREE.CanvasTexture(flagCanvas);flagTexture.flipY=false;flagTexture.colorSpace=THREE.SRGBColorSpace;flagTexture.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),12);flagTexture.minFilter=THREE.LinearMipmapLinearFilter;flagTexture.magFilter=THREE.LinearFilter;
+    const flagTexture=new THREE.CanvasTexture(flagCanvas);flagTexture.flipY=true;flagTexture.colorSpace=THREE.SRGBColorSpace;flagTexture.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),12);flagTexture.minFilter=THREE.LinearMipmapLinearFilter;flagTexture.magFilter=THREE.LinearFilter;
     const roofX1=x1-1.5,roofX2=x2+1.5,roofZ1=z1-2,roofZ2=z2-1,roofY=roofEdgeY;
     const across=32,along=64,positions=[],uvs=[],indices=[];
     const roofHeight=(u,v)=>roofY+7.2*(1-Math.pow((u-.5)*2,2))+.9*Math.sin(v*Math.PI);
@@ -537,15 +542,24 @@ let OrbitControls = null;
       const v=j/along;
       for(let i=0;i<=across;i++){
         const u=i/across,x=roofX1+(roofX2-roofX1)*u,z=roofZ1+(roofZ2-roofZ1)*v,y=roofHeight(u,v);
-        const p=world(x,z,y);positions.push(p.x,p.y,p.z);uvs.push(u,v);
+        const p=world(x,z,y);positions.push(p.x,p.y,p.z);uvs.push(u,1-v);
         if(i<across&&j<along){const a=j*(across+1)+i,b=a+1,c=a+(across+1),d=c+1;indices.push(a,c,b,b,c,d);}
       }
     }
     const canopyGeometry=new THREE.BufferGeometry();
     canopyGeometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
     canopyGeometry.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));canopyGeometry.setIndex(indices);canopyGeometry.computeVertexNormals();
-    const canopyMat=new THREE.MeshStandardMaterial({map:flagTexture,roughness:.82,metalness:.015,side:THREE.DoubleSide});
+    const canopyMat=new THREE.MeshStandardMaterial({map:flagTexture,roughness:.82,metalness:.015,side:THREE.FrontSide});
     const canopy=new THREE.Mesh(canopyGeometry,canopyMat);canopy.castShadow=true;canopy.receiveShadow=true;canopy.renderOrder=4;scene.add(canopy);
+    // The flag is an exterior roof finish, never a floor graphic. From inside the gym,
+    // visitors see a plain warm soffit instead of a mirrored flag on the underside.
+    const soffitPositions=positions.map((value,index)=>index%3===1?value-1.45:value);
+    const soffitGeometry=new THREE.BufferGeometry();
+    soffitGeometry.setAttribute('position',new THREE.Float32BufferAttribute(soffitPositions,3));
+    soffitGeometry.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
+    soffitGeometry.setIndex(indices);soffitGeometry.computeVertexNormals();
+    const soffitMat=new THREE.MeshStandardMaterial({color:0xe8e2d4,roughness:.94,metalness:0,side:THREE.DoubleSide});
+    const soffit=new THREE.Mesh(soffitGeometry,soffitMat);soffit.receiveShadow=true;soffit.renderOrder=3;scene.add(soffit);
     // Raised perimeter fascia and underside trusses make the flag unmistakably a roof canopy,
     // not a flag texture lying on the basketball floor.
     const fasciaMat=new THREE.MeshStandardMaterial({color:0xe3ddcf,roughness:.52,metalness:.18});
@@ -795,6 +809,16 @@ let OrbitControls = null;
       [207,297,250,395],[249,297,306,480],[303,286,350,482],[132,500,210,551],[207,475,292,562],[290,486,350,560]
     ];
     ctx.fillStyle='#fbfaf6';masks.forEach(([x1,y1,x2,y2])=>ctx.fillRect(x1*sx,y1*sy,(x2-x1)*sx,(y2-y1)*sy));
+    // The source illustration contains a large Philippine-flag graphic under the Beta/gym
+    // footprint. It is a 2D planning graphic, not campus paving; mask the COMPLETE shared
+    // footprint so no fragment can appear on the 3D floor beside or beneath the canopy.
+    const fx1=198,fy1=278,fx2=312,fy2=486;
+    ctx.fillStyle='#e9e6dd';
+    ctx.fillRect(fx1*sx,fy1*sy,(fx2-fx1)*sx,(fy2-fy1)*sy);
+    // Fine concrete joints give the newly exposed circulation apron a deliberate finish.
+    ctx.strokeStyle='rgba(112,119,108,.12)';ctx.lineWidth=Math.max(1,sx*.22);
+    for(let x=fx1+8;x<fx2;x+=12){ctx.beginPath();ctx.moveTo(x*sx,fy1*sy);ctx.lineTo(x*sx,fy2*sy);ctx.stroke();}
+    for(let y=fy1+10;y<fy2;y+=14){ctx.beginPath();ctx.moveTo(fx1*sx,y*sy);ctx.lineTo(fx2*sx,y*sy);ctx.stroke();}
     // Campus perimeter stripe and subtle pedestrian-court guide lines.
     ctx.fillStyle='#173f2d';ctx.fillRect(0,c.height-12,c.width,12);
     return new THREE.CanvasTexture(c);

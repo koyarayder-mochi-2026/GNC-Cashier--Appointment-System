@@ -331,7 +331,7 @@ The original supplied map artwork is 351 × 570 pixels. `assets/gnc-campus-map-r
 
 ### 3D architectural model
 
-The 3D view is not a tilted screenshot. It builds separate extruded building meshes from the supplied campus plan and adds facade details: instanced multi-floor windows with frames and mullions, floor bands, corner pilasters, roof parapets, and cast shadows. Tanjangco, the upper Limlingan wing, Puno, Goseco wings, and Main Gate use sloped hip-roof meshes. Goseco is modeled as a U-shaped complex around an open courtyard. Beta uses a curved, flag-textured canopy; Parking 1 and Parking 2 have raised decks and painted parking-bay lines. Main Gate is an open, column-supported portico so the route can pass through the entrance instead of floating above a solid roof.
+The 3D view is not a tilted screenshot. It builds separate extruded building meshes from the supplied campus plan and adds facade details: instanced multi-floor windows with frames and mullions, floor bands, corner pilasters, roof parapets, and cast shadows. Tanjangco, the upper Limlingan wing, Puno, Goseco wings, and Main Gate use sloped hip-roof meshes. Goseco is modeled as a U-shaped complex around an open courtyard. The separate basketball gym uses a raised curved Philippine-flag canopy; Beta remains an enclosed cashier building with a green roof. Parking 1 and Parking 2 have raised decks and painted parking-bay lines. Main Gate is an open, column-supported portico so the route can pass through the entrance instead of floating above a solid roof.
 
 The camera starts in a full-campus isometric view. Selecting a destination animates the camera toward that building; zoom, orbit, pan, reset, and return-to-gate controls are available. Destination labels and transparent hit areas support both directory selection and direct map selection.
 
@@ -350,9 +350,9 @@ The 3D map requires WebGL and an internet connection to load Three.js r161 and O
 
 Beta Building is the enclosed green cashier/administration building. It is modeled separately from the adjacent open-sided basketball gym. Beta has a three-storey facade, individual framed windows, floor bands, three cashier service windows, a public entrance and porch, a physical cashier sign, and a horizontal red/blue two-field roof.
 
-The basketball gym is a separate open-sided structure. Beta Building is positioned behind it toward the north-west, rather than directly alongside the gym. The gym's curved canopy carries a procedurally generated Philippine flag matching the supplied reference: red on the far/north half, blue on the near/south half, and the white triangle with sun and stars at the right/east end. Beneath the canopy is a raised school-event stage at the north end, with a platform, broad steps, backdrop, curtains, lectern and microphone; the basketball court begins farther south so the stage and court do not overlap.
+The basketball gym is a separate open-sided structure. Beta Building is positioned behind it toward the north-west, rather than directly alongside the gym. The gym's curved canopy carries a procedurally generated Philippine flag matching the supplied close-up reference: blue on the left, red on the right, and the white triangle with the sun and stars at the near/south end. The flag material is rendered only on the exterior roof surface; the underside is a plain warm soffit, and the original flag artwork is masked out of the 3D ground texture beneath the gym/Beta area. Beneath the canopy is a raised school-event stage at the north end, with a platform, broad steps, backdrop, curtains, lectern and microphone; the basketball court begins farther south so the stage and court do not overlap.
 
-The supplied Rizal statue cutout remains in the Goseco courtyard with a ground shadow and monument label. The Limlingan Hall pedestrian bridges remain independent and unchanged. The approved 2D map and its routes, plus Supabase cashier/admin/notification integrations, are preserved. No database migration is required.
+The supplied Rizal statue cutout remains in the Goseco courtyard with a ground shadow and monument label. The gym spectator bleachers face east toward the court: the lowest row is nearest the playing surface, while the rear rows rise toward the west; the backrests and access stair are oriented accordingly. The Limlingan Hall pedestrian bridges remain independent and unchanged. The approved 2D map and its routes, plus Supabase cashier/admin/notification integrations, are preserved. No database migration is required.
 
 
 ## November 15 update — Beta Gym and Rizal Monument
@@ -362,7 +362,7 @@ The supplied Rizal statue cutout remains in the Goseco courtyard with a ground s
 - Added a red gym apron and inset blue playing court.
 - Added straight court boundary lines, centre line and centre circle, free-throw boxes and arcs, two backboards, and two basket rims.
 - Added six green structural supports so the flag canopy reads as a roof over the gym rather than a flag painted on a solid classroom block.
-- Preserved the original Beta roof/flag texture from the supplied campus plan.
+- Beta's roof is solid school green. The Philippine flag is reserved for the separate gym canopy, not Beta's roof or the court floor.
 
 ### Rizal Monument
 - Added the supplied Rizal statue photograph as a transparent cutout sprite with camera-facing orientation, so its likeness remains visible while users orbit the 3D campus.
@@ -430,3 +430,12 @@ No database migration is required for these visual changes.
 - Changed the entire Beta Building cashier roof to school green. Red/blue flag-colored panels were removed from Beta; the gym retains the separate flag canopy.
 
 No Supabase database migration is required.
+
+
+## November 15 correction — flag surface and spectator seating
+
+- The Philippine flag remains on the raised curved gym canopy only. Its layout is blue on the left, red on the right, with the white triangle, sun and three stars at the near/south end, following the latest close-up reference.
+- The roof flag uses corrected UV direction and a front-face exterior material. A plain cream soffit is placed below it so the flag is not visible as a mirrored image from inside the gym.
+- The 2D planning graphic's flag footprint is masked from the 3D ground texture across the full Beta/gym apron, then replaced with a subtle concrete joint pattern. The 2D source image itself remains unchanged.
+- Spectator benches now face east toward the basketball court. The front/lowest row is nearest the court; the middle and rear rows step progressively higher toward the west. Backrests are placed on the west/rear edge, and the access stair climbs from the court side toward the back rows.
+- No database migration is required. Cashier, admin, authentication, queue, and notification integrations are unchanged.

@@ -25,3 +25,11 @@ A live GPU/WebGL render test against the user's Vercel site is not available in 
 
 ## Accuracy note
 The provided campus drawing and screenshots are illustrative, not surveyed architectural plans. The new gym and Beta footprints are modeled interpretations of the supplied video and close-up images. GNCI should verify locations, dimensions, entrances, and pedestrian access before using the map as official navigation.
+
+
+## Latest gym flag and seating correction
+- Reversed/normalized canopy UV mapping so the flag composition is aligned to the roof long axis: blue left, red right, white triangle at the near end.
+- Made the flag material exterior-facing only and added a solid cream soffit underneath; the flag is not shown on the gym underside.
+- Masked the full embedded flag illustration out of the 3D ground texture below the Beta/gym apron and replaced it with neutral concrete paving. The original 2D plan image remains unchanged.
+- Reoriented spectator benches toward the basketball court: lowest row in front/east, higher rows behind/west, backrests on the west side; the access stair ascends from east to west.
+- No Supabase files, queue code, authentication, or database schema were changed.
