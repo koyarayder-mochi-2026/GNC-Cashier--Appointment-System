@@ -363,7 +363,7 @@ let OrbitControls = null;
     // Separate open-sided gym to the east of Beta Building. The flag canopy is
     // procedural geometry + a generated flag material, not a screenshot pasted on a box.
     const x1=251.5,z1=300,x2=302.5,z2=474,w=x2-x1,d=z2-z1,cx=(x1+x2)/2,cz=(z1+z2)/2;
-    const roofEdgeY=48.5;
+    const roofEdgeY=56.5;
     const materials={
       apron:new THREE.MeshStandardMaterial({color:0xa83c2a,roughness:.9}),
       court:new THREE.MeshStandardMaterial({color:0x123e71,roughness:.78}),
@@ -419,8 +419,8 @@ let OrbitControls = null;
     const postXs=[x1+3,x2-3];
     const postZs=[z1+7,z1+42,z1+78,z1+114,z1+150,z2-7];
     postXs.forEach(px=>postZs.forEach(pz=>{
-      box(2.3,roofEdgeY-2.5,2.3,px,pz,(roofEdgeY-2.5)/2,materials.green);
-      box(3.6,1.1,3.6,px,pz,roofEdgeY-2.0,materials.cream);
+      box(2.3,roofEdgeY-1.4,2.3,px,pz,(roofEdgeY-1.4)/2,materials.green);
+      box(3.6,1.1,3.6,px,pz,roofEdgeY-1.15,materials.cream);
       box(3.0,1.0,3.0,px,pz,3.0,materials.cream);
     }));
     box(2.0,2.0,d+5,x1+3,cz,roofEdgeY-1.5,materials.green);
@@ -430,22 +430,24 @@ let OrbitControls = null;
     // material on curved geometry, so the flag follows the roof curvature in 3D.
     const flagCanvas=document.createElement('canvas');flagCanvas.width=1024;flagCanvas.height=1792;
     const ctx=flagCanvas.getContext('2d');
-    ctx.fillStyle='#0645a0';ctx.fillRect(0,0,512,1792);
-    ctx.fillStyle='#c9152b';ctx.fillRect(512,0,512,1792);
-    ctx.fillStyle='#fffdf4';ctx.beginPath();ctx.moveTo(0,1792);ctx.lineTo(1024,1792);ctx.lineTo(512,1240);ctx.closePath();ctx.fill();
-    // Sun, eight rays, three stars and subtle printed seam lines are drawn as flag details.
-    const sunX=512,sunY=1590;
+    // Correct canopy orientation: red toward the far/north edge, blue toward the
+    // near/south edge, and the white hoist triangle at the east end of the roof.
+    ctx.fillStyle='#c8102e';ctx.fillRect(0,0,1024,896);
+    ctx.fillStyle='#0038a8';ctx.fillRect(0,896,1024,896);
+    ctx.fillStyle='#fffdf4';ctx.beginPath();ctx.moveTo(1024,0);ctx.lineTo(1024,1792);ctx.lineTo(565,896);ctx.closePath();ctx.fill();
+    // Sun and three stars sit wholly inside the white triangle.
+    const sunX=842,sunY=896;
     ctx.strokeStyle='#e6ae24';ctx.lineWidth=22;ctx.lineCap='round';
-    for(let i=0;i<8;i++){const a=i*Math.PI/4;ctx.beginPath();ctx.moveTo(sunX+Math.cos(a)*72,sunY+Math.sin(a)*72);ctx.lineTo(sunX+Math.cos(a)*148,sunY+Math.sin(a)*148);ctx.stroke();}
-    ctx.fillStyle='#efb72f';ctx.beginPath();ctx.arc(sunX,sunY,64,0,Math.PI*2);ctx.fill();
+    for(let i=0;i<8;i++){const a=i*Math.PI/4;ctx.beginPath();ctx.moveTo(sunX+Math.cos(a)*62,sunY+Math.sin(a)*62);ctx.lineTo(sunX+Math.cos(a)*142,sunY+Math.sin(a)*142);ctx.stroke();}
+    ctx.fillStyle='#efb72f';ctx.beginPath();ctx.arc(sunX,sunY,58,0,Math.PI*2);ctx.fill();
     function star(cx0,cy0,r){ctx.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?r*.42:r;const px=cx0+Math.cos(a)*rr,py=cy0+Math.sin(a)*rr;i?ctx.lineTo(px,py):ctx.moveTo(px,py);}ctx.closePath();ctx.fill();}
-    ctx.fillStyle='#efb72f';star(95,1688,43);star(929,1688,43);star(512,1300,43);
+    ctx.fillStyle='#efb72f';star(968,145,42);star(968,1647,42);star(585,896,42);
     ctx.strokeStyle='rgba(255,255,255,.28)';ctx.lineWidth=5;
     for(let x=64;x<1024;x+=128){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,1792);ctx.stroke();}
     const flagTexture=new THREE.CanvasTexture(flagCanvas);flagTexture.colorSpace=THREE.SRGBColorSpace;flagTexture.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),12);flagTexture.minFilter=THREE.LinearMipmapLinearFilter;flagTexture.magFilter=THREE.LinearFilter;
     const roofX1=x1-1.5,roofX2=x2+1.5,roofZ1=z1-2,roofZ2=z2-1,roofY=roofEdgeY;
     const across=32,along=64,positions=[],uvs=[],indices=[];
-    const roofHeight=(u,v)=>roofY+4.2*(1-Math.pow((u-.5)*2,2))+.45*Math.sin(v*Math.PI);
+    const roofHeight=(u,v)=>roofY+7.2*(1-Math.pow((u-.5)*2,2))+.9*Math.sin(v*Math.PI);
     for(let j=0;j<=along;j++){
       const v=j/along;
       for(let i=0;i<=across;i++){
@@ -459,6 +461,18 @@ let OrbitControls = null;
     canopyGeometry.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));canopyGeometry.setIndex(indices);canopyGeometry.computeVertexNormals();
     const canopyMat=new THREE.MeshStandardMaterial({map:flagTexture,roughness:.82,metalness:.015,side:THREE.DoubleSide});
     const canopy=new THREE.Mesh(canopyGeometry,canopyMat);canopy.castShadow=true;canopy.receiveShadow=true;canopy.renderOrder=4;scene.add(canopy);
+    // Raised perimeter fascia and underside trusses make the flag unmistakably a roof canopy,
+    // not a flag texture lying on the basketball floor.
+    const fasciaMat=new THREE.MeshStandardMaterial({color:0xe3ddcf,roughness:.52,metalness:.18});
+    const frontFascia=new THREE.Mesh(new THREE.BoxGeometry(roofX2-roofX1+2,1.5,1.8),fasciaMat);
+    frontFascia.position.copy(world(cx,roofZ2,roofEdgeY-1.1));frontFascia.castShadow=true;scene.add(frontFascia);
+    const rearFascia=new THREE.Mesh(new THREE.BoxGeometry(roofX2-roofX1+2,1.5,1.8),fasciaMat);
+    rearFascia.position.copy(world(cx,roofZ1,roofEdgeY-1.1));rearFascia.castShadow=true;scene.add(rearFascia);
+    const undersideBeamMat=new THREE.MeshStandardMaterial({color:0x315343,roughness:.64,metalness:.12});
+    for(const px of [roofX1+2,roofX2-2]){
+      const beam=new THREE.Mesh(new THREE.BoxGeometry(1.8,2.2,roofZ2-roofZ1),undersideBeamMat);
+      beam.position.copy(world(px,(roofZ1+roofZ2)/2,roofEdgeY-3.0));beam.castShadow=true;scene.add(beam);
+    }
     // Subtle curved structural ribs follow the canopy, not a flat rectangular slab.
     const ribMat=new THREE.MeshStandardMaterial({color:0x66776e,roughness:.48,metalness:.28});
     for(let j=0;j<=8;j++){
@@ -604,7 +618,9 @@ let OrbitControls = null;
     if(b.roofStyle!=='cashier'){addFacadeDetails(b);addWindows(b);}
     if(b.roofStyle==='hip') addHippedRoof(image,b);
     else if(b.roofStyle!=='cashier') {
-      const roofMat=new THREE.MeshStandardMaterial({color:b.color||0xd8d1c2,roughness:.9,metalness:.015,side:THREE.DoubleSide});
+      const roofMat=b.type==='parking'
+        ? new THREE.MeshStandardMaterial({map:makeParkingAsphaltTexture(w,d),color:0xffffff,roughness:.96,metalness:.01,side:THREE.DoubleSide})
+        : new THREE.MeshStandardMaterial({color:b.color||0xd8d1c2,roughness:.9,metalness:.015,side:THREE.DoubleSide});
       const roof=new THREE.Mesh(new THREE.PlaneGeometry(w-.7,d-.7),roofMat);
       roof.rotation.x=-Math.PI/2;roof.position.set(center.x,b.h+.75,center.z);roof.receiveShadow=true;roof.castShadow=true;scene.add(roof);
       const trimMat=new THREE.MeshStandardMaterial({color:b.wall,roughness:.65});
@@ -698,17 +714,149 @@ let OrbitControls = null;
     ctx.fillStyle='#173f2d';ctx.fillRect(0,c.height-12,c.width,12);
     return new THREE.CanvasTexture(c);
   }
-  function addParkingStripeLines(){
-    const paint=new THREE.MeshStandardMaterial({color:0xe9e4ea,roughness:.9});
-    const line=(x,z,w,d,y=6.05)=>{
-      const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,.18,d),paint);
-      mesh.position.copy(world(x+w/2,z+d/2,y));mesh.receiveShadow=true;scene.add(mesh);
+  function makeParkingAsphaltTexture(width,depth){
+    const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=1024;
+    const ctx=canvas.getContext('2d');
+    ctx.fillStyle='#6b7070';ctx.fillRect(0,0,canvas.width,canvas.height);
+    // Fine, deterministic aggregate texture gives the deck a believable sealed-asphalt finish.
+    let seed=Math.round(width*113+depth*71);
+    const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
+    for(let i=0;i<14000;i++){
+      const v=Math.floor(58+rand()*70);
+      ctx.fillStyle=`rgba(${v},${v+2},${v+3},${.08+rand()*.16})`;
+      const x=rand()*1024,y=rand()*1024,r=.35+rand()*1.5;
+      ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+    }
+    // Faint roller/patch streaks, low contrast so the painted bays remain dominant.
+    for(let i=0;i<45;i++){
+      const y=rand()*1024;
+      ctx.strokeStyle=`rgba(230,231,224,${.018+rand()*.025})`;ctx.lineWidth=1+rand()*2;
+      ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(1024,y+(rand()-.5)*8);ctx.stroke();
+    }
+    const texture=new THREE.CanvasTexture(canvas);
+    texture.colorSpace=THREE.SRGBColorSpace;
+    texture.wrapS=THREE.RepeatWrapping;texture.wrapT=THREE.RepeatWrapping;
+    texture.repeat.set(Math.max(1,width/105),Math.max(1,depth/105));
+    texture.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),12);
+    return texture;
+  }
+
+  function addParkingVehicle(x,z,axis,color){
+    // Small, detailed low-poly cars are deliberately sparse so every parking bay stays legible.
+    const horizontal=axis==='x',bodyW=horizontal?15.5:8.4,bodyD=horizontal?8.4:15.5;
+    const baseY=6.15,bodyY=8.45;
+    const paint=new THREE.MeshStandardMaterial({color,roughness:.38,metalness:.18});
+    const dark=new THREE.MeshStandardMaterial({color:0x15242c,roughness:.42,metalness:.18});
+    const glass=new THREE.MeshStandardMaterial({color:0x244b60,roughness:.22,metalness:.22,transparent:true,opacity:.92});
+    const chrome=new THREE.MeshStandardMaterial({color:0xb9c1bb,roughness:.3,metalness:.65});
+    const lamp=new THREE.MeshStandardMaterial({color:0xf5e7bb,emissive:0x8a6c32,emissiveIntensity:.25});
+    const box=(w,h,d,px,pz,py,mat)=>{
+      const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+      m.position.copy(world(px,pz,py));m.castShadow=true;m.receiveShadow=true;scene.add(m);return m;
     };
-    // Parking 1: two clean rows of individual stalls divided by a central drive aisle.
-    for(let x=20;x<=300;x+=15){line(x,17,.72,29);line(x,72,.72,29);}
-    line(14,56,298,.55,6.0);
-    // Parking 2: horizontal bays follow the narrow north-south lot.
-    for(let z=127;z<=226;z+=14)line(15,z,45,.72,6.0);
+    // Shadow pad, chassis and softly rounded-looking body assembled from clean bevel-like layers.
+    const shadow=new THREE.Mesh(new THREE.BoxGeometry(bodyW+1,.28,bodyD+1),
+      new THREE.MeshBasicMaterial({color:0x222927,transparent:true,opacity:.16}));
+    shadow.position.copy(world(x,z,baseY+.1));scene.add(shadow);
+    box(bodyW,2.5,bodyD,x,z,bodyY,paint);
+    box(bodyW*.78,2.3,bodyD*.53,x,z,bodyY+2.1,paint);
+    box(bodyW*.68,1.68,bodyD*.47,x,z,bodyY+2.18,glass);
+    // Roof cap and windshield highlights.
+    box(bodyW*.62,.35,bodyD*.45,x,z,bodyY+3.17,chrome);
+    const wheelMat=dark;
+    const wheelOffsets=horizontal
+      ? [[-bodyW*.31,-bodyD*.38],[bodyW*.31,-bodyD*.38],[-bodyW*.31,bodyD*.38],[bodyW*.31,bodyD*.38]]
+      : [[-bodyW*.38,-bodyD*.31],[bodyW*.38,-bodyD*.31],[-bodyW*.38,bodyD*.31],[bodyW*.38,bodyD*.31]];
+    wheelOffsets.forEach(([dx,dz])=>{
+      const wheel=new THREE.Mesh(new THREE.CylinderGeometry(1.25,1.25,.78,12),wheelMat);
+      wheel.rotation.set(horizontal?Math.PI/2:0,0,horizontal?0:Math.PI/2);wheel.position.copy(world(x+dx,z+dz,7.35));wheel.castShadow=true;scene.add(wheel);
+      const hub=new THREE.Mesh(new THREE.CylinderGeometry(.48,.48,.82,12),chrome);
+      hub.rotation.set(horizontal?Math.PI/2:0,0,horizontal?0:Math.PI/2);hub.position.copy(world(x+dx,z+dz,7.35));scene.add(hub);
+    });
+    // Front and rear lamps are placed on the short ends for each parking orientation.
+    [-1,1].forEach(side=>{
+      if(horizontal){
+        box(.65,.72,1.55,x+bodyW/2+.12,z+side*bodyD*.34,bodyY+.15,lamp);
+        box(.65,.7,1.5,x-bodyW/2-.12,z+side*bodyD*.34,bodyY+.1,new THREE.MeshStandardMaterial({color:0xb62f31,emissive:0x3d0808}));
+      }else{
+        box(1.55,.72,.65,x+side*bodyW*.34,z+bodyD/2+.12,bodyY+.15,lamp);
+        box(1.5,.7,.65,x+side*bodyW*.34,z-bodyD/2-.12,bodyY+.1,new THREE.MeshStandardMaterial({color:0xb62f31,emissive:0x3d0808}));
+      }
+    });
+  }
+
+  function addParkingLighting(x,z,height=17){
+    const poleMat=new THREE.MeshStandardMaterial({color:0x46534e,roughness:.5,metalness:.42});
+    const lampMat=new THREE.MeshStandardMaterial({color:0xfff0c8,emissive:0xc9a65d,emissiveIntensity:.75,roughness:.35});
+    const pole=new THREE.Mesh(new THREE.CylinderGeometry(.65,.9,height,10),poleMat);
+    pole.position.copy(world(x,z,height/2+6));pole.castShadow=true;scene.add(pole);
+    const arm=new THREE.Mesh(new THREE.BoxGeometry(5,.6,.8),poleMat);arm.position.copy(world(x+2,z,height+5.6));arm.castShadow=true;scene.add(arm);
+    const head=new THREE.Mesh(new THREE.BoxGeometry(4.4,.65,3.0),lampMat);head.position.copy(world(x+4,z,height+5.2));head.castShadow=true;scene.add(head);
+  }
+
+  function addParkingStripeLines(){
+    const paint=new THREE.MeshStandardMaterial({color:0xf5f1e4,roughness:.82,emissive:0x141414});
+    const yellow=new THREE.MeshStandardMaterial({color:0xd8b54f,roughness:.78});
+    const curb=new THREE.MeshStandardMaterial({color:0xc8c3b7,roughness:.9});
+    const island=new THREE.MeshStandardMaterial({color:0x526f4d,roughness:.95});
+    const line=(x,z,w,d,y=6.12,mat=paint)=>{
+      const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,.20,d),mat);
+      mesh.position.copy(world(x+w/2,z+d/2,y));mesh.receiveShadow=true;mesh.castShadow=false;scene.add(mesh);return mesh;
+    };
+    const curbBox=(w,h,d,x,z,y,mat=curb)=>{
+      const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+      m.position.copy(world(x,z,y));m.castShadow=true;m.receiveShadow=true;scene.add(m);return m;
+    };
+    // PARKING 1: dark paved deck, two banks of perpendicular stalls and a wide central drive aisle.
+    line(10,15,306,.8,6.10);line(10,46,306,.8,6.10);
+    line(10,71,306,.8,6.10);line(10,102,306,.8,6.10);
+    for(let x=20;x<=300;x+=15){
+      line(x,16,.58,30,6.13);line(x,72,.58,30,6.13);
+    }
+    // Central aisle double guide lines and directional arrows.
+    line(14,57,298,.42,6.13,yellow);line(14,67,298,.42,6.13,yellow);
+    for(const x of [42,102,162,222,282]){
+      const arrow=new THREE.Mesh(new THREE.ConeGeometry(2.25,5.5,3),paint);
+      arrow.rotation.x=Math.PI/2;arrow.rotation.z=Math.PI;arrow.position.copy(world(x,62,6.45));scene.add(arrow);
+    }
+    // Curbed planted separators add depth at the unused corners without blocking any bay.
+    [[14,10],[308,10],[14,108],[308,108]].forEach(([x,z])=>{
+      curbBox(8,1.5,10,x,z,6.4);curbBox(5.3,1.1,7.3,x,z,7.65,island);
+      [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dx,dz])=>{
+        const shrub=new THREE.Mesh(new THREE.SphereGeometry(1.8,8,6),new THREE.MeshStandardMaterial({color:0x3f7849,roughness:.95}));
+        shrub.position.copy(world(x+dx*1.3,z+dz*1.2,9));shrub.castShadow=true;scene.add(shrub);
+      });
+    });
+    // Wheel stops at occupied sample spaces.
+    const p1Cars=[
+      [35,31,'#e9e7df'],[80,31,'#1c5678'],[125,31,'#a83d38'],
+      [185,86,'#d3b35a'],[230,86,'#e4e3dd'],[275,86,'#2e604b']
+    ];
+    p1Cars.forEach(([x,z,color])=>{
+      curbBox(5.2,.8,1.0,x,z+9.0,6.6,curb);
+      addParkingVehicle(x,z,'z',color);
+    });
+    // PARKING 2: the narrow west-side lot has individual cross-bays and a clear central approach.
+    for(let z=127;z<=226;z+=14)line(14,z,47,.62,6.13);
+    line(13,126,.65,110,6.13);line(61,126,.65,110,6.13);
+    line(13,180,49,.42,6.13,yellow);
+    [[37,137,'#e8e5de'],[37,165,'#244e70'],[37,193,'#a53d39'],[37,221,'#c5b27e']].forEach(([x,z,color])=>{
+      curbBox(2.0,.75,5.5,x+20,z,6.6,curb);
+      addParkingVehicle(x,z,'x',color);
+    });
+    // Pedestrian zebra crossing at the shared parking-to-campus approaches.
+    for(let i=0;i<7;i++){
+      line(140+i*5,108,2.3,6.5,6.16,paint);
+      line(68,238+i*2.4,5.8,1.15,6.16,paint);
+    }
+    // Tall cut-off poles and down-facing lamps give the lots a readable scale cue.
+    [[18,53],[302,53],[18,92],[64,180]].forEach(([x,z])=>addParkingLighting(x,z,15));
+    const p1=labelTexture('PARKING 1','#6d4a7f');
+    const p2=labelTexture('PARKING 2','#6d4a7f');
+    [[p1,80,60,31],[p2,42,175,30]].forEach(([map,x,z,width])=>{
+      const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map,transparent:true,depthTest:true,depthWrite:false}));
+      sprite.scale.set(width,width*.205,1);sprite.position.copy(world(x,z,7.8));sprite.renderOrder=12;scene.add(sprite);
+    });
   }
 
   let routeAnim=[];

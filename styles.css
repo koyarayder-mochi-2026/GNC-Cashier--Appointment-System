@@ -382,7 +382,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .notification-settings-message{min-height:15px;margin:0;color:#176044;font-size:11px;line-height:1.5}
 .notification-settings-message.error{color:#a52e37}
 .notification-settings-message:empty{display:none}
-@media(max-width:760px){.notification-preferences{grid-template-columns:1fr;gap:17px}}
+@media(max-width:760px){.campus-2d-art{width:min(390px,76%)}}\n@media(max-width:760px){.notification-preferences{grid-template-columns:1fr;gap:17px}}
 @media(max-width:520px){.notification-email-option,.notification-device-option{align-items:flex-start;flex-direction:column}.notification-options .button{width:100%}}
 
 
@@ -469,9 +469,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .campus-3d-viewport .campus-3d-loading.is-hidden{display:none}
 .campus-2d-stage{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;overflow:hidden;background:linear-gradient(155deg,#dce8df 0%,#f1f2ee 60%,#e4ebe5 100%);touch-action:none}
 .campus-2d-stage[hidden]{display:none!important}
-.campus-2d-art{position:relative;width:min(351px,42%);aspect-ratio:351/570;flex:none;transform-origin:center center;will-change:transform;filter:drop-shadow(0 12px 22px rgba(24,48,34,.16));cursor:grab;user-select:none}
+.campus-2d-art{position:relative;width:min(440px,58%);aspect-ratio:351/570;flex:none;transform-origin:center center;will-change:transform;filter:drop-shadow(0 12px 22px rgba(24,48,34,.16));cursor:grab;user-select:none}
 .campus-2d-art:active{cursor:grabbing}
-.campus-2d-art>img{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;-webkit-user-drag:none}
+.campus-2d-art>img{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;-webkit-user-drag:none;image-rendering:auto;backface-visibility:hidden;transform:translateZ(0)}
 #campus2dOverlay{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 .campus-2d-route-halo,.campus-2d-route,.campus-2d-route-dash{fill:none;stroke-linecap:round;stroke-linejoin:round;pointer-events:none;vector-effect:non-scaling-stroke}
 .campus-2d-route-halo{stroke:#fff;stroke-width:10;filter:drop-shadow(0 1px 2px rgba(30,38,29,.35))}
