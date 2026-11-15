@@ -56,13 +56,3 @@ The source campus plan is 351 × 570 pixels and is an illustration. Upscaling re
 
 ### Runtime limitation
 This environment could not complete a browser-based live WebGL render test against the deployed Vercel site. The Three.js source passed syntax and static checks, but the final appearance, shadowing and sprite presentation should be confirmed in the real browser after deployment.
-
-
-## Follow-up correction (2026-11-15)
-- `campus-map-3d.js` passes `node --check` after replacing the incorrect Beta gym with an enclosed cashier building.
-- Removed the Beta basketball-court/gym geometry and flag canopy implementation.
-- Added Beta cashier service windows, entrance, facade glazing, sign plaque, and solid blue/red roof panels.
-- Added the covered Limlingan pedestrian bridge as 3D geometry.
-- Removed screenshot-cropped map textures from the hipped and flat roof materials; roof finishes now use solid material colours and physical geometry.
-- Existing 2D map assets and route definitions were not changed.
-- Runtime visual verification on the user's live browser/Vercel deployment remains outstanding; static syntax and packaging checks are not a substitute for that.
