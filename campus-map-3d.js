@@ -19,7 +19,7 @@ let OrbitControls = null;
   const MAP_W = 351, MAP_H = 570;
   const GATE = [252,548];
   const destinations = [
-    {id:'beta',name:'Beta Building',code:'BETA',color:'#287b42',focus:[229,344],footprint:[210,300,248,392],description:'Beta Building — cashier and administration offices. Follow the west-side walkway from the Main Gate.'},
+    {id:'beta',name:'Beta Building',code:'BETA',color:'#287b42',focus:[218,331],footprint:[204,285,232,377],description:'Beta Building — cashier and administration offices, positioned behind the basketball gym. Follow the west-side walkway from the Main Gate.'},
     {id:'banzali',name:'Banzali Hall',code:'BH',color:'#c94c50',focus:[322,385],footprint:[306,289,346,478],description:'Banzali Hall — follow the eastern perimeter walkway.'},
     {id:'tanj',name:'Tanjangco Hall',code:'TH',color:'#27864d',focus:[135,199],footprint:[90,167,181,234],description:'Tanjangco Hall — follow the central passage, then turn west.'},
     {id:'goseco',name:'Goseco Hall',code:'GH',color:'#d8aa35',focus:[258,180],footprint:[218,155,348,296],description:'Goseco Hall — follow the central passage toward the north-east.'},
@@ -50,7 +50,7 @@ let OrbitControls = null;
   // 3D paths are adjusted to the clear walkable gaps between the modeled buildings.
   // The already-approved 2D linework above is deliberately left unchanged.
   const routes3d = {
-    beta:      [[252,548],[205,548],[205,480],[205,420],[229,420],[229,400]],
+    beta:      [[252,548],[205,548],[205,480],[205,420],[205,385],[218,385]],
     banzali:   [[252,548],[212,548],[212,480],[250,480],[300,480],[300,430],[305,430],[305,398]],
     tanj:      [[252,548],[212,548],[212,480],[212,380],[212,298],[217,298],[217,240],[185,240],[185,225]],
     goseco:    [[252,548],[212,548],[212,480],[212,380],[212,298],[217,298],[235,298]],
@@ -133,7 +133,7 @@ let OrbitControls = null;
     {id:'limlinganNorthWing',name:'',rect:[132,244,216,278],h:24,wall:'#3d7049',roof:[132,244,216,278],color:'#a8c2a0',roofStyle:'hip'},
     {id:'limlingan',name:'Limlingan Hall',rect:[162,278,198,375],h:25,wall:'#3d7049',roof:[162,278,198,375],color:'#a8c2a0',roofStyle:'flat'},
     {id:'puno',name:'Puno Hall',rect:[160,376,198,478],h:25,wall:'#365b6e',roof:[160,376,198,478],color:'#a7c3cb',roofStyle:'hip'},
-    {id:'beta',name:'Beta Building',rect:[210,300,248,392],h:37,wall:'#15583a',roof:[210,300,248,392],color:'#d5d3c4',roofStyle:'cashier'},
+    {id:'beta',name:'Beta Building',rect:[204,285,232,377],h:37,wall:'#15583a',roof:[204,285,232,377],color:'#d5d3c4',roofStyle:'cashier'},
     {id:'banzali',name:'Banzali Hall',rect:[306,289,346,478],h:37,wall:'#853d3d',roof:[306,289,346,478],color:'#d78c8b',roofStyle:'flat'},
     {id:'gateLeft',name:'',rect:[136,502,198,548],h:17,wall:'#6f6c5d',roof:[136,502,198,548],color:'#e5ddcb',roofStyle:'hip'},
     {id:'gate',name:'Main Gate',rect:[210,477,290,560],h:21,wall:'#6a6251',roof:[210,477,290,560],color:'#e8dfcc',roofStyle:'hip',type:'portico'},
@@ -283,8 +283,8 @@ let OrbitControls = null;
     });
   }
   function addCashierBuilding(b){
-    // Beta Building is the enclosed cashier/administration block. The gym and its
-    // Philippine-flag canopy are a separate structure immediately to the east.
+    // Beta Building is the enclosed cashier/administration block, set behind
+    // (north-west of) the separate open-sided gym and its Philippine-flag canopy.
     const [x1,z1,x2,z2]=b.rect,w=x2-x1,d=z2-z1,cx=(x1+x2)/2,cz=(z1+z2)/2;
     const green=new THREE.MeshStandardMaterial({color:0x15583a,roughness:.82,metalness:.015});
     const greenDark=new THREE.MeshStandardMaterial({color:0x0d3d29,roughness:.86});
@@ -360,8 +360,8 @@ let OrbitControls = null;
   }
 
   function addBasketballGym(){
-    // Separate open-sided gym to the east of Beta Building. The flag canopy is
-    // procedural geometry + a generated flag material, not a screenshot pasted on a box.
+    // Separate open-sided gym. Beta Building sits behind it toward the north-west.
+    // The flag canopy is procedural geometry + generated material, never a pasted screenshot.
     const x1=251.5,z1=300,x2=302.5,z2=474,w=x2-x1,d=z2-z1,cx=(x1+x2)/2,cz=(z1+z2)/2;
     const roofEdgeY=56.5;
     const materials={
@@ -382,7 +382,7 @@ let OrbitControls = null;
     // Low perimeter plinth, red apron and a blue court with crisp painted markings.
     box(w+2,2,d+2,cx,cz,1.1,materials.cream);
     box(w,1.0,d,cx,cz,2.45,materials.apron);
-    const courtX1=x1+4,courtX2=x2-4,courtZ1=z1+5,courtZ2=z2-5;
+    const courtX1=x1+4,courtX2=x2-4,courtZ1=z1+46,courtZ2=z2-5;
     const courtCx=(courtX1+courtX2)/2,courtCz=(courtZ1+courtZ2)/2,courtW=courtX2-courtX1,courtD=courtZ2-courtZ1;
     box(courtW,.65,courtD,courtCx,courtCz,3.25,materials.court);
     const paintY=3.66;
@@ -405,6 +405,47 @@ let OrbitControls = null;
       const ft=new THREE.Mesh(new THREE.TorusGeometry(7,.24,7,48),circleMat);
       ft.rotation.x=Math.PI/2;ft.position.copy(world(courtCx,kz+keyD,paintY+.1));scene.add(ft);
     });
+    // Raised school-event stage at the north end of the gym, beneath the flag canopy.
+    // The platform, apron, steps, backdrop, curtains and lectern are separate solid meshes.
+    const stageX=courtCx,stageZ=z1+21,stageW=34,stageD=25,stageTop=7.2;
+    const stageWood=new THREE.MeshStandardMaterial({color:0x704536,roughness:.82});
+    const stageFace=new THREE.MeshStandardMaterial({color:0x8f3b32,roughness:.8});
+    const stageTrim=new THREE.MeshStandardMaterial({color:0xe5d7bd,roughness:.7});
+    const curtain=new THREE.MeshStandardMaterial({color:0x7e2634,roughness:.9});
+    const curtainDark=new THREE.MeshStandardMaterial({color:0x4f1d2b,roughness:.92});
+    const stageMetal=new THREE.MeshStandardMaterial({color:0x59675f,roughness:.45,metalness:.3});
+    box(stageW,stageTop-2,stageD,stageX,stageZ,stageTop/2,stageWood);
+    box(stageW+1.2,1.0,stageD+1.2,stageX,stageZ,stageTop-0.45,stageTrim);
+    box(stageW-1.6,.75,1.2,stageX,stageZ+stageD/2-.5,stageTop-1.1,stageFace);
+    // Three broad, shallow steps face the basketball court.
+    for(let i=0;i<3;i++){
+      const depth=3.6,width=stageW-7,y=1.4+i*1.75;
+      box(width,y,depth,stageX,stageZ+stageD/2+2.0+i*2.6,y/2,stageTrim);
+      box(width,.32,depth+.2,stageX,stageZ+stageD/2+2.0+i*2.6,y+.08,stageWood,{castShadow:false});
+    }
+    // Backdrop wall and folded curtain panels; the gym remains open on its long sides.
+    const backZ=z1+7.2;
+    box(stageW+2,17,1.8,stageX,backZ,16.5,stageMetal);
+    box(stageW-2,13.8,.8,stageX,backZ+1.2,16.2,curtainDark);
+    box(7,14,1.0,stageX-stageW/2+4,backZ+1.9,16.3,curtain);
+    box(7,14,1.0,stageX+stageW/2-4,backZ+1.9,16.3,curtain);
+    for(let i=0;i<12;i++){
+      const x=stageX-stageW/2+7+i*1.75;
+      box(.8,13.6,1.0,x,backZ+1.7,16.3,i%2?curtain:curtainDark);
+    }
+    // Header fascia with a readable stage title, plus modest side wing trims.
+    box(stageW+3,2.2,2.4,stageX,backZ+1.0,25.6,stageTrim);
+    const stageSign=new THREE.Sprite(new THREE.SpriteMaterial({map:labelTexture('GNCI SCHOOL STAGE','#17603e'),transparent:true,depthTest:true,depthWrite:false}));
+    stageSign.scale.set(25,5,1);stageSign.position.copy(world(stageX,backZ+2.25,26.2));stageSign.renderOrder=11;scene.add(stageSign);
+    [-1,1].forEach(side=>{
+      box(2.2,16,2.4,stageX+side*(stageW/2+1),backZ+1.1,16.5,stageTrim);
+      box(2.6,1.2,2.8,stageX+side*(stageW/2+1),stageZ,stageTop-.5,stageFace);
+    });
+    // A simple lectern and microphone complete the event setup without crowding the stage.
+    box(3.4,4.6,2.6,stageX+9,stageZ+2,stageTop+1.8,stageWood);
+    box(4.4,.55,3.4,stageX+9,stageZ+2,stageTop+4.2,stageTrim);
+    const mic=new THREE.Mesh(new THREE.CylinderGeometry(.16,.16,3.2,10),stageMetal);
+    mic.position.copy(world(stageX+9,stageZ+2,stageTop+5.8));mic.castShadow=true;scene.add(mic);
     // Basketball hoops at both ends: vertical backboard, support arm and a raised orange rim.
     [courtZ1+7,courtZ2-7].forEach((boardZ,index)=>{
       const inward=index===0?1:-1;
@@ -430,8 +471,9 @@ let OrbitControls = null;
     // material on curved geometry, so the flag follows the roof curvature in 3D.
     const flagCanvas=document.createElement('canvas');flagCanvas.width=1024;flagCanvas.height=1792;
     const ctx=flagCanvas.getContext('2d');
-    // Correct canopy orientation: red toward the far/north edge, blue toward the
-    // near/south edge, and the white hoist triangle at the east end of the roof.
+    // Match the supplied reference exactly: red is the far/north half, blue is
+    // the near/south half, and the white hoist triangle occupies the right/east end.
+    // Texture UV v=0 maps to the north edge; keep CanvasTexture flipY explicit.
     ctx.fillStyle='#c8102e';ctx.fillRect(0,0,1024,896);
     ctx.fillStyle='#0038a8';ctx.fillRect(0,896,1024,896);
     ctx.fillStyle='#fffdf4';ctx.beginPath();ctx.moveTo(1024,0);ctx.lineTo(1024,1792);ctx.lineTo(565,896);ctx.closePath();ctx.fill();
@@ -444,7 +486,7 @@ let OrbitControls = null;
     ctx.fillStyle='#efb72f';star(968,145,42);star(968,1647,42);star(585,896,42);
     ctx.strokeStyle='rgba(255,255,255,.28)';ctx.lineWidth=5;
     for(let x=64;x<1024;x+=128){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,1792);ctx.stroke();}
-    const flagTexture=new THREE.CanvasTexture(flagCanvas);flagTexture.colorSpace=THREE.SRGBColorSpace;flagTexture.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),12);flagTexture.minFilter=THREE.LinearMipmapLinearFilter;flagTexture.magFilter=THREE.LinearFilter;
+    const flagTexture=new THREE.CanvasTexture(flagCanvas);flagTexture.flipY=false;flagTexture.colorSpace=THREE.SRGBColorSpace;flagTexture.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),12);flagTexture.minFilter=THREE.LinearMipmapLinearFilter;flagTexture.magFilter=THREE.LinearFilter;
     const roofX1=x1-1.5,roofX2=x2+1.5,roofZ1=z1-2,roofZ2=z2-1,roofY=roofEdgeY;
     const across=32,along=64,positions=[],uvs=[],indices=[];
     const roofHeight=(u,v)=>roofY+7.2*(1-Math.pow((u-.5)*2,2))+.9*Math.sin(v*Math.PI);
