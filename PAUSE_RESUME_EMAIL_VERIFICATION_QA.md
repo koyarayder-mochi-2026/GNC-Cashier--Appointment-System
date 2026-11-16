@@ -1,29 +1,45 @@
-# GNC Pause/Resume and Email Verification QA
+# GNC Pause/Resume + Email Verification — QA report
 
-## Implemented
-- Admin pause/resume calls now read the saved status back from `get_queue_system_status()` before showing a success toast.
-- Admin system status is loaded and rendered independently from cashier queue data and audit history. Auxiliary panel failures no longer suppress the global pause state.
-- Unknown/unverified backend status disables both pause and resume controls rather than assuming the system is open.
-- Admin dashboard refreshes on a 5-second interval and when the tab regains focus.
-- Student landing page starts with a status-check notice, hides the login/create-account panel until status is known, and polls the saved status every 4 seconds. A paused state shows the custom unavailable notice; a resumed state restores student access.
-- Added a GNC-styled Supabase email callback page (`email-verified.html`). It verifies the returned Supabase user, clears the temporary callback session locally, and displays a verified confirmation with a button to return to the main page's Login tab.
-- Signup now sends `emailRedirectTo` to `/email-verified.html`; unverified login errors expose a resend-verification action.
+## Email callback issue fixed
 
-## Static checks
-- `node --check` passed for all 8 JavaScript files.
-- HTML parsed for `index.html`, `admin/index.html`, `display.html`, and `email-verified.html`.
-- No duplicate IDs found.
-- All local `src`/`href` references resolve within the project.
-- Required verification and pause-state DOM elements confirmed.
-- Pause/resume and email verification call sites checked.
-- Dollar-quoted SQL delimiters balanced in the new migration and existing SQL files.
-- Final ZIP tested with `unzip -t`; no archive errors.
+The screenshots showed Supabase redirecting to `http://localhost:3000/?code=...`; the local development server was not running, so Chrome returned `ERR_CONNECTION_REFUSED`.
 
-## Required deployment configuration
-1. Run `gnc_pause_resume_reliability_patch.sql` in the existing Supabase SQL Editor. It is idempotent for the global settings row and replaces the status/pause RPC definitions without deleting tickets.
-2. Deploy the updated frontend bundle.
-3. In Supabase Authentication → URL Configuration, set Site URL to `https://gnc-cashier-appointment-system.vercel.app` and add `https://gnc-cashier-appointment-system.vercel.app/email-verified.html` to Redirect URLs.
-4. Keep Supabase email confirmation enabled and use the standard `{{ .ConfirmationURL }}` confirmation link in the email template.
+Changes in this release:
+- `config.js` now contains the fixed production callback URL `https://gnc-cashier-appointment-system.vercel.app/email-verified.html`.
+- Signup and resend-verification both use that configured URL; they no longer use `window.location.origin`.
+- `email-verified.js` explicitly exchanges PKCE `?code=` using `exchangeCodeForSession`, supports `token_hash` using `verifyOtp`, and retains support for legacy implicit access-token fragments.
+- The page validates `email_confirmed_at`/`confirmed_at`, clears the temporary local callback session, removes one-time callback parameters from the address bar, and then displays the GNC verified-success screen.
+- The success button opens `/?verified=1#authPanel`; the main portal selects Login, shows the verified confirmation message, and scrolls to the login area (or to the paused notice if online access is paused).
+- The setup guide now includes a direct `{{ .TokenHash }}` Confirm signup template link. This avoids PKCE verifier origin problems if signup began on localhost or the confirmation opens in a different browser context.
 
-## Not performed
-This environment does not have authenticated access to the user's live Supabase project or Vercel deployment. The SQL migration has not been run against the live database, and real email delivery/confirmation plus browser behavior have not been tested on the deployed site. These require the deployment steps above and a test student email address.
+## Automated checks completed
+
+- Node syntax checks for all 8 project JavaScript files.
+- HTML parse checks for 4 HTML pages.
+- Duplicate HTML ID checks.
+- All local HTML asset references checked.
+- Fixed HTTPS callback configuration checked.
+- Signup and resend wiring checked to use the same configured callback helper.
+- Mocked auth tests passed for PKCE `code` and `token_hash` verification branches.
+- Verified-success message, session cleanup, callback URL cleanup and continue-to-login target checked.
+- ZIP integrity test completed.
+
+## Required Supabase dashboard configuration
+
+After deploying this build:
+
+1. Authentication → URL Configuration: Site URL = `https://gnc-cashier-appointment-system.vercel.app`.
+2. Add Redirect URL = `https://gnc-cashier-appointment-system.vercel.app/email-verified.html`.
+3. Authentication → Email Templates → Confirm signup: replace the current `{{ .ConfirmationURL }}` link with:
+
+```html
+<a href="https://gnc-cashier-appointment-system.vercel.app/email-verified.html?token_hash={{ .TokenHash }}&amp;type=signup">Confirm email address</a>
+```
+
+4. Save the template and request a fresh verification email from the deployed GNC site.
+
+Old emails that already contain `localhost:3000` cannot be rewritten. They must be replaced with a newly sent email. Students should use the newest link only.
+
+## Not claimed
+
+The live Supabase dashboard template/settings and live Vercel deployment were not changed from this environment. End-to-end message delivery and redirect must be confirmed after applying the dashboard settings above.

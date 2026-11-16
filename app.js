@@ -45,7 +45,8 @@ async function showView(viewId) {
 
 async function initialize() {
   const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get('verified') === '1') {
+  const arrivedFromEmailVerification = urlParams.get('verified') === '1';
+  if (arrivedFromEmailVerification) {
     switchAuthTab('login');
     showMessage('authMessage', 'Your email is now verified. You can access your GNC student account. You may now log in.', 'success');
     // Keep the confirmation notice visible while removing the one-time query flag.
@@ -63,6 +64,10 @@ async function initialize() {
   const { data: { session }, error } = await supabase.auth.getSession();
   if (error) console.error(error);
   await handleSession(session);
+  if (arrivedFromEmailVerification && !session) {
+    const destination = state.systemStatus?.student_access_enabled ? $('authPanel') : $('studentAccessPaused');
+    window.setTimeout(() => destination?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+  }
   supabase.auth.onAuthStateChange((_event, newSession) => {
     window.setTimeout(() => handleSession(newSession), 0);
   });
@@ -529,7 +534,15 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('focus', () => { if (configReady) loadQueueSystemStatus(); });
 
 function getEmailVerificationRedirect() {
-  return new URL('/email-verified.html', window.location.origin).href;
+  const configured = String(window.GNC_SUPABASE_CONFIG?.emailRedirectUrl || '').trim();
+  if (!configured) {
+    throw new Error('The GNC email verification URL is not configured. Set emailRedirectUrl in config.js to the deployed /email-verified.html page.');
+  }
+  const target = new URL(configured);
+  if (target.protocol !== 'https:' || target.hostname === 'localhost') {
+    throw new Error('The GNC email verification URL must be the deployed HTTPS website, not localhost.');
+  }
+  return target.href;
 }
 
 async function resendStudentVerification(email, messageElementId = 'signupVerificationMessage') {
