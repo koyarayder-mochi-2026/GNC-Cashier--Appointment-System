@@ -1,7 +1,7 @@
 import { api, supabase, configReady } from './api.js';
 
 const $ = (id) => document.getElementById(id);
-const state = { session: null, profile: null, windows: [], rowsByWindow: new Map(), status: null, busy: false, timer: null };
+const state = { session: null, profile: null, windows: [], rowsByWindow: new Map(), status: null, statusVerifiedAt: 0, busy: false, timer: null, refreshing: false };
 
 function escapeHtml(value = '') {
   return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -146,26 +146,61 @@ function showLogin() {
 }
 
 async function refreshDashboard() {
-  if (!state.session || state.profile?.role !== 'admin') return;
+  if (!state.session || state.profile?.role !== 'admin' || state.refreshing) return;
+  state.refreshing = true;
+  hideMessage('dashboardMessage');
+  let statusOk = false;
   try {
-    const [status, windows, events] = await Promise.all([
-      api.getQueueSystemStatus(), api.listCashierWindows(false), api.getQueueSystemEvents(12)
-    ]);
+    // Read and render the global switch first. A failing queue or audit query
+    // must never prevent the administrator from seeing the saved pause state.
+    const status = await api.getQueueSystemStatus();
+    if (!status || typeof status.student_access_enabled !== 'boolean') {
+      throw new Error('Supabase returned an invalid system status. Check the database migration.');
+    }
     state.status = status;
-    state.windows = windows;
-    const queueResults = await Promise.all(windows.map(async windowRow => ({
+    state.statusVerifiedAt = Date.now();
+    statusOk = true;
+    renderSystemStatus();
+  } catch (error) {
+    $('systemStateTitle').textContent = 'Unable to verify student access state';
+    $('systemStateDescription').textContent = error.message || 'Could not read the saved setting from Supabase.';
+    $('systemStatePill').textContent = 'STATUS UNKNOWN';
+    $('systemStatePill').className = 'state-pill state-checking';
+    $('pauseSystemBtn').disabled = true;
+    $('resumeSystemBtn').disabled = true;
+    showMessage('dashboardMessage', 'Pause/resume controls are disabled until Supabase confirms the saved access state. ' + (error.message || ''), 'error');
+  }
+
+  // Auxiliary dashboard panels load independently; their failure does not
+  // affect the verified system switch above.
+  const [windowsResult, eventsResult] = await Promise.allSettled([
+    api.listCashierWindows(false), api.getQueueSystemEvents(12)
+  ]);
+
+  if (windowsResult.status === 'fulfilled') {
+    state.windows = windowsResult.value;
+    const queueResults = await Promise.allSettled(state.windows.map(async windowRow => ({
       windowRow,
       rows: await api.getStaffQueue(windowRow.id, manilaDate())
     })));
-    state.rowsByWindow = new Map(queueResults.map(item => [item.windowRow.id, item.rows]));
-    renderSystemStatus();
+    const fulfilled = queueResults.filter(result => result.status === 'fulfilled').map(result => result.value);
+    state.rowsByWindow = new Map(fulfilled.map(item => [item.windowRow.id, item.rows]));
     renderCounters();
-    renderEvents(events);
-    setConnection(true, 'LIVE · CONNECTED');
-  } catch (error) {
-    setConnection(false, 'CONNECTION ISSUE');
-    showMessage('dashboardMessage', error.message || 'Unable to refresh the administrator dashboard.');
+    if (fulfilled.length !== state.windows.length) {
+      showMessage('dashboardMessage', 'System access status is current, but one or more cashier queues could not be loaded. Use Refresh to try again.', 'error');
+    }
+  } else {
+    showMessage('dashboardMessage', 'System access status is current, but cashier counters could not be loaded: ' + (windowsResult.reason?.message || 'Unknown error'), 'error');
   }
+
+  if (eventsResult.status === 'fulfilled') renderEvents(eventsResult.value);
+  else {
+    $('eventHistory').innerHTML = '<p class="muted">Activity history is temporarily unavailable. The global access state is still shown above.</p>';
+  }
+
+  if (statusOk) setConnection(true, 'LIVE · STATUS VERIFIED');
+  else setConnection(false, 'STATUS NOT VERIFIED');
+  state.refreshing = false;
 }
 
 function renderSystemStatus() {
@@ -179,9 +214,10 @@ function renderSystemStatus() {
   $('systemStatePill').className = `state-pill ${enabled ? 'state-open' : 'state-paused'}`;
   $('pauseSystemBtn').hidden = !enabled;
   $('resumeSystemBtn').hidden = enabled;
-  $('pauseSystemBtn').disabled = state.busy;
-  $('resumeSystemBtn').disabled = state.busy;
-  $('pauseMessage').disabled = !enabled || state.busy;
+  const statusFresh = Boolean(state.statusVerifiedAt) && (Date.now() - state.statusVerifiedAt < 15000);
+  $('pauseSystemBtn').disabled = state.busy || !statusFresh;
+  $('resumeSystemBtn').disabled = state.busy || !statusFresh;
+  $('pauseMessage').disabled = !enabled || state.busy || !statusFresh;
 }
 
 function renderCounters() {
@@ -235,12 +271,18 @@ async function runAction(action, details) {
   try {
     if (action === 'pause') {
       const message = $('pauseMessage').value.trim();
-      await api.adminSetQueueAccess(false, message || null);
-      toast('New student queue requests are now paused. Existing tickets are saved.');
+      const saved = await api.adminSetQueueAccess(false, message || null);
+      state.status = saved;
+      state.statusVerifiedAt = Date.now();
+      renderSystemStatus();
+      toast('CONFIRMED: online student access is PAUSED. Existing tickets remain saved and staff can continue serving.');
       $('pauseMessage').value = '';
     } else if (action === 'resume') {
-      await api.adminSetQueueAccess(true, null);
-      toast('Student queue access has been reopened.');
+      const saved = await api.adminSetQueueAccess(true, null);
+      state.status = saved;
+      state.statusVerifiedAt = Date.now();
+      renderSystemStatus();
+      toast('CONFIRMED: student access is OPEN. Students can sign in and request new queue numbers.');
     } else if (action === 'next') {
       const ticketId = await api.callNext(details.windowId);
       const alertStatus = await sendTurnAlert(ticketId);
@@ -271,6 +313,7 @@ async function runAction(action, details) {
     showMessage('dashboardMessage', error.message || 'The action could not be completed.');
   } finally {
     setBusy(false);
+    if (state.status) renderSystemStatus();
   }
 }
 
@@ -286,8 +329,13 @@ async function signOut() {
 }
 function startPolling() {
   if (state.timer) clearInterval(state.timer);
-  state.timer = setInterval(() => refreshDashboard(), 8000);
+  state.timer = setInterval(() => refreshDashboard(), 5000);
 }
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && state.session) refreshDashboard();
+});
+window.addEventListener('focus', () => { if (state.session) refreshDashboard(); });
 
 $('adminLoginForm').addEventListener('submit', signIn);
 $('signOutBtn').addEventListener('click', signOut);

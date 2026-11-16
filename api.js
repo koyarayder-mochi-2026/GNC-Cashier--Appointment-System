@@ -79,10 +79,19 @@ export const api = {
 
   async adminSetQueueAccess(enabled, message = null) {
     const client = requireClient();
-    return unwrap(await client.rpc('admin_set_queue_access', {
-      p_enabled: Boolean(enabled),
+    const desired = Boolean(enabled);
+    unwrap(await client.rpc('admin_set_queue_access', {
+      p_enabled: desired,
       p_message: message || null
     }));
+
+    // The SQL RPC intentionally returns void for compatibility. Read the
+    // persisted row back before the UI reports that the switch changed.
+    const saved = await this.getQueueSystemStatus();
+    if (!saved || saved.student_access_enabled !== desired) {
+      throw new Error('Supabase did not confirm the requested access state. Refresh the dashboard and check the saved status.');
+    }
+    return saved;
   },
 
   async getQueueSystemEvents(limit = 12) {

@@ -439,3 +439,32 @@ No Supabase database migration is required.
 - The 2D planning graphic's flag footprint is masked from the 3D ground texture across the full Beta/gym apron, then replaced with a subtle concrete joint pattern. The 2D source image itself remains unchanged.
 - Spectator benches now face east toward the basketball court. The front/lowest row is nearest the court; the middle and rear rows step progressively higher toward the west. Backrests are placed on the west/rear edge, and the access stair climbs from the court side toward the back rows.
 - No database migration is required. Cashier, admin, authentication, queue, and notification integrations are unchanged.
+
+
+## Student email verification callback
+
+New student registrations send a Supabase email confirmation link to `/email-verified.html`. After Supabase confirms the email, this page clears the callback session and shows a GNC-branded message: “Your email is now verified. You may now log in.” The button returns to the main portal with the Login tab selected.
+
+In Supabase Dashboard, open **Authentication → URL Configuration** and add the deployed callback URL to **Redirect URLs**, for example:
+
+`https://YOUR-VERCEL-DOMAIN/email-verified.html`
+
+Also add the local development callback URL if needed, e.g. `http://localhost:5500/email-verified.html`. Replace `YOUR-VERCEL-DOMAIN` with the exact live hostname. If the callback URL is not allow-listed, Supabase may reject or redirect the confirmation flow to the Site URL.
+
+## Pause / resume reliability
+
+The admin dashboard reads the global setting independently of the cashier and audit panels. Pause and Resume now perform a read-after-write verification against `get_queue_system_status()` before displaying a success message. The student homepage polls the public status every four seconds and refreshes immediately when the tab regains focus. The student auth and ticket forms remain disabled whenever status is paused or cannot be verified.
+
+## Existing Supabase project: pause/resume migration
+
+For an already-deployed GNC database, run `gnc_pause_resume_reliability_patch.sql` once in Supabase SQL Editor. It ensures the global `queue_system_settings` row exists, recreates the public status read and admin-only pause/resume RPCs, reapplies their execute grants, and reloads the PostgREST schema cache. It does not delete queue tickets or profiles.
+
+## Supabase email confirmation URL allow-list
+
+This build requests the Supabase confirmation callback at:
+
+`https://gnc-cashier-appointment-system.vercel.app/email-verified.html`
+
+In Supabase Dashboard → Authentication → URL Configuration, add that exact URL to **Redirect URLs**. Set the **Site URL** to `https://gnc-cashier-appointment-system.vercel.app`. For local testing, also allow the exact local URL you use, such as `http://127.0.0.1:5500/email-verified.html` or `http://localhost:5500/email-verified.html`.
+
+Registration sends the student to the branded confirmation page. On successful confirmation, the callback page clears the temporary confirmation session and displays a verified message. The student then clicks **Continue to sign in**, returning to `index.html?verified=1#authPanel` with the Login tab selected. Unverified sign-in attempts show a resend-verification action.

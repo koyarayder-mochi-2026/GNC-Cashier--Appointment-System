@@ -91,18 +91,18 @@
   </section>
 
   <main class="page-shell">
-    <section id="studentAccessPaused" class="paused-access-panel hidden" aria-live="polite">
-      <div class="paused-icon" aria-hidden="true">Ⅱ</div>
-      <div><p class="eyebrow">STUDENT ONLINE ACCESS</p><h2>Online queue access is temporarily unavailable.</h2><p id="pausedAccessMessage">The cashier office has paused new online queue numbers. Your existing queue data is saved. Please check again later.</p><a href="display.html" class="button button-primary">View live cashier queue <span>→</span></a></div>
+    <section id="studentAccessPaused" class="paused-access-panel" aria-live="polite">
+      <div class="paused-icon" aria-hidden="true">…</div>
+      <div><p class="eyebrow">STUDENT ONLINE ACCESS</p><h2 id="pausedAccessTitle">Checking online queue availability…</h2><p id="pausedAccessMessage">Please wait while we confirm the current cashier access status.</p><a href="display.html" class="button button-primary">View live cashier queue <span>→</span></a></div>
     </section>
-    <section id="authPanel" class="auth-layout">
+    <section id="authPanel" class="auth-layout hidden">
       <div class="auth-intro">
         <p class="eyebrow">STUDENT ACCESS</p><h2>Welcome to<br>GNC Online Queue.</h2>
         <p>Sign in using your student account to get a cashier number and monitor the line from your phone or computer.</p>
         <div class="notice"><span class="notice-icon">i</span><span>This system reserves your place in the queue. Payment is still made in person at Cashier 1 or Cashier 2.</span></div>
       </div>
       <div class="panel auth-card">
-        <div class="auth-tabs"><button class="auth-tab active" data-auth-tab="login" type="button">Sign in</button><button class="auth-tab" data-auth-tab="signup" type="button">Create account</button></div>
+        <div id="authTabs" class="auth-tabs"><button class="auth-tab active" data-auth-tab="login" type="button">Sign in</button><button class="auth-tab" data-auth-tab="signup" type="button">Create account</button></div>
         <form id="loginForm" class="form-stack">
           <div><label for="loginEmail">School email</label><input id="loginEmail" type="email" placeholder="you@example.com" autocomplete="email" required></div>
           <div><label for="loginPassword">Password</label><input id="loginPassword" type="password" placeholder="Enter your password" autocomplete="current-password" required></div>
@@ -117,7 +117,17 @@
           <button class="button button-primary button-full" type="submit">Create student account <span>→</span></button>
           <p class="form-foot">Your account will be assigned the Student role automatically.</p>
         </form>
-        <div id="authMessage" class="message hidden" role="status"></div>
+        <div id="authMessage" class="message hidden" role="status" aria-live="polite"></div>
+        <section id="signupVerificationPanel" class="email-verification-panel hidden" aria-live="polite">
+          <div class="email-verification-icon" aria-hidden="true">✉</div>
+          <p class="eyebrow">CHECK YOUR INBOX</p>
+          <h3>Verify your student email</h3>
+          <p>We sent a verification link to <strong id="verificationEmailAddress">your email address</strong>. Open that email and confirm your address. After verification, you will be returned to the GNC page where you can sign in.</p>
+          <button id="resendSignupVerificationBtn" class="button button-primary button-full" type="button">Resend verification email</button>
+          <button id="backToLoginFromVerification" class="verification-text-button" type="button">Back to sign in</button>
+          <p id="signupVerificationMessage" class="notification-settings-message" role="status" aria-live="polite"></p>
+        </section>
+        <button id="resendVerificationBtn" class="verification-resend-button hidden" type="button">Resend verification email</button>
       </div>
     </section>
 

@@ -44,6 +44,13 @@ async function showView(viewId) {
 }
 
 async function initialize() {
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('verified') === '1') {
+    switchAuthTab('login');
+    showMessage('authMessage', 'Your email is now verified. You can access your GNC student account. You may now log in.', 'success');
+    // Keep the confirmation notice visible while removing the one-time query flag.
+    window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+  }
   if (!configReady) {
     setConnection(false, 'Setup needed');
     state.systemStatusError = 'Supabase is not configured. Student access is unavailable until the project settings are added.';
@@ -106,8 +113,14 @@ function applySystemAccessUI() {
   const pausedPanel = $('studentAccessPaused');
   if (pausedPanel) {
     pausedPanel.classList.toggle('hidden', signedIn || enabled);
-    $('pausedAccessMessage').textContent = message + ' Existing queue records are retained and cashier staff can continue serving already-issued numbers.';
+    $('pausedAccessTitle').textContent = ready
+      ? 'Online queue access is temporarily unavailable.'
+      : 'Checking online queue availability…';
+    $('pausedAccessMessage').textContent = ready
+      ? message + ' Existing queue records are retained and cashier staff can continue serving already-issued numbers.'
+      : message + ' Student sign-in and new queue numbers remain unavailable until status can be verified.';
   }
+  setConnection(ready, ready ? (enabled ? 'Connected to Supabase' : 'Student access paused') : 'Checking access status');
   const authPanel = $('authPanel');
   if (authPanel && !signedIn) authPanel.classList.toggle('hidden', !enabled);
   for (const id of ['navStudentAccess', 'headerAccess', 'heroQueueLink']) {
@@ -496,29 +509,77 @@ function subscribeRealtime() {
 }
 function startPolling() {
   if (state.refreshTimer) clearInterval(state.refreshTimer);
-  // Status and the public board refresh even when signed out so a pause/resume
-  // is immediately reflected on the landing page. Staff actions remain usable.
+  // Status and the public board refresh even when signed out, so an admin
+  // pause/resume is reflected on the public landing page without a reload.
   state.refreshTimer = setInterval(async () => {
     await loadQueueSystemStatus();
     try { await loadPublicQueueBoard(); }
     catch (e) { console.warn('Public queue refresh failed:', e.message); }
     if (!state.session) return;
-    // Poll the student's active ticket while device alerts are enabled, even
-    // on another portal page; otherwise the in-tab fallback would be view-bound.
-    if (state.activeView === 'myQueueView' || state.notificationPreferences.device_enabled) {
-      await loadMyQueue();
-    }
+    if (state.activeView === 'myQueueView' || state.notificationPreferences.device_enabled) await loadMyQueue();
     if (state.activeView === 'staffView') await loadStaffDashboard();
-  }, 5000);
+  }, 4000);
+}
+
+// Refresh immediately when the visitor returns to the page, rather than
+// waiting for the next polling tick after the admin resumes or pauses access.
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && configReady) loadQueueSystemStatus();
+});
+window.addEventListener('focus', () => { if (configReady) loadQueueSystemStatus(); });
+
+function getEmailVerificationRedirect() {
+  return new URL('/email-verified.html', window.location.origin).href;
+}
+
+async function resendStudentVerification(email, messageElementId = 'signupVerificationMessage') {
+  const address = String(email || '').trim();
+  if (!address) {
+    if (messageElementId === 'signupVerificationMessage') showMessage(messageElementId, 'Enter your email address first.', 'error');
+    else showMessage('authMessage', 'Enter your email address first.', 'error');
+    return;
+  }
+  const button = messageElementId === 'signupVerificationMessage' ? $('resendSignupVerificationBtn') : $('resendVerificationBtn');
+  setBusy(button, true, 'Sending…');
+  try {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: address,
+      options: { emailRedirectTo: getEmailVerificationRedirect() }
+    });
+    if (error) throw error;
+    if (messageElementId === 'signupVerificationMessage') showMessage(messageElementId, 'A new verification email has been requested. Check your inbox and spam folder.', 'success');
+    else showMessage('authMessage', 'A new verification email has been requested. Check your inbox and spam folder.', 'success');
+  } catch (error) {
+    if (messageElementId === 'signupVerificationMessage') showMessage(messageElementId, error.message || 'Could not resend the verification email.', 'error');
+    else showMessage('authMessage', error.message || 'Could not resend the verification email.', 'error');
+  } finally { setBusy(button, false); }
+}
+
+function returnToStudentLogin() {
+  $('signupVerificationPanel')?.classList.add('hidden');
+  $('authTabs')?.classList.remove('hidden');
+  $('signupForm')?.classList.add('hidden');
+  switchAuthTab('login');
+  $('loginEmail').focus();
 }
 
 async function handleLogin(event) {
   event.preventDefault(); clearMessage('authMessage');
+  $('resendVerificationBtn').classList.add('hidden');
   const btn = $('loginForm').querySelector('button[type="submit"]'); setBusy(btn, true, 'Signing in…');
   try {
     const { error } = await supabase.auth.signInWithPassword({ email: $('loginEmail').value.trim(), password: $('loginPassword').value });
     if (error) throw error;
-  } catch (err) { showMessage('authMessage', err.message || 'Unable to sign in.', 'error'); }
+  } catch (err) {
+    const code = String(err.code || '').toLowerCase();
+    const text = String(err.message || '').toLowerCase();
+    const unverified = code === 'email_not_confirmed' || text.includes('email not confirmed') || text.includes('email_not_confirmed');
+    showMessage('authMessage', unverified
+      ? 'Your email address is not verified yet. Open the verification link we sent to your inbox, then sign in. You can request a new link below.'
+      : (err.message || 'Unable to sign in.'), 'error');
+    $('resendVerificationBtn').classList.toggle('hidden', !unverified);
+  }
   finally { setBusy(btn, false); }
 }
 async function handleSignup(event) {
@@ -528,15 +589,27 @@ async function handleSignup(event) {
     const email = $('signupEmail').value.trim();
     const { data, error } = await supabase.auth.signUp({
       email, password: $('signupPassword').value,
-      options: { data: {
-        full_name: $('signupName').value.trim(), student_number: $('signupStudentNo').value.trim(),
-        program: $('signupProgram').value.trim(), year_level: $('signupYear').value.trim()
-      } }
+      options: {
+        emailRedirectTo: getEmailVerificationRedirect(),
+        data: {
+          full_name: $('signupName').value.trim(), student_number: $('signupStudentNo').value.trim(),
+          program: $('signupProgram').value.trim(), year_level: $('signupYear').value.trim()
+        }
+      }
     });
     if (error) throw error;
-    if (!data.session) showMessage('authMessage', 'Account created. Check your email for the verification link, then sign in.', 'success');
-    else showToast('Student account created.');
     $('signupForm').reset();
+    if (!data.session) {
+      $('verificationEmailAddress').textContent = email;
+      $('authTabs').classList.add('hidden');
+      $('signupForm').classList.add('hidden');
+      $('signupVerificationPanel').classList.remove('hidden');
+      clearMessage('authMessage');
+    } else {
+      // Projects with email confirmation disabled may return a session immediately.
+      switchAuthTab('login');
+      showMessage('authMessage', 'Your account is ready. You may now sign in to the GNC student portal.', 'success');
+    }
   } catch (err) { showMessage('authMessage', err.message || 'Unable to create your account.', 'error'); }
   finally { setBusy(btn, false); }
 }
@@ -548,6 +621,9 @@ document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click'
 document.addEventListener('click', (e) => { const target = e.target.closest('[data-go-view]'); if (target) showView(target.dataset.goView); });
 $('loginForm').addEventListener('submit', handleLogin);
 $('signupForm').addEventListener('submit', handleSignup);
+$('resendSignupVerificationBtn')?.addEventListener('click', () => resendStudentVerification($('verificationEmailAddress').textContent));
+$('backToLoginFromVerification')?.addEventListener('click', returnToStudentLogin);
+$('resendVerificationBtn')?.addEventListener('click', () => resendStudentVerification($('loginEmail').value, 'authMessage'));
 $('queueForm').addEventListener('submit', handleQueueRequest);
 $('signOutBtn').addEventListener('click', signOut);
 $('refreshQueueBtn').addEventListener('click', async () => { await Promise.all([loadMyQueue(), loadPublicQueueBoard()]); showToast('Queue status refreshed.'); });
